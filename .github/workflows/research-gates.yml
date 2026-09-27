@@ -122,6 +122,27 @@ jobs:
             'H-0001|Smoke-test identity theorem|VERIFIED_RESULT|NOVELTY_REVIEWED|PROOF_RECONSTRUCTED|INDEPENDENTLY_REPRODUCED|MaCiC|Math CI/CD' \
             /tmp/blind-export
 
+
+  agent-sandbox:
+    name: agent-sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -e .
+
+      - name: Install bubblewrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+
+      - name: Verify execution sandbox
+        run: researchctl sandbox-audit
+
   workflow-audit:
     name: workflow-audit
     runs-on: ubuntu-latest
@@ -238,7 +259,7 @@ jobs:
   summary:
     name: research-summary
     if: always()
-    needs: [protocol-gate, unit-tests, acceptance-suite, agent-protocol, blind-context, workflow-audit, lean-build, axiom-audit, exact-dependencies]
+    needs: [protocol-gate, unit-tests, acceptance-suite, agent-protocol, blind-context, agent-sandbox, workflow-audit, lean-build, axiom-audit, exact-dependencies]
     runs-on: ubuntu-latest
     steps:
       - name: Write summary
@@ -255,5 +276,6 @@ jobs:
             echo "| Lean build | ${{ needs['lean-build'].result }} |"
             echo "| Axiom audit | ${{ needs['axiom-audit'].result }} |"
             echo "| Blind context | ${{ needs['blind-context'].result }} |"            
+            echo "| Agent sandbox | ${{ needs['agent-sandbox'].result }} |"
             echo "| Exact dependencies | ${{ needs['exact-dependencies'].result }} |"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -23,6 +23,7 @@ from .reviews import review_state
 from .acceptance import run as run_acceptance
 from .agent_protocol import write_agent_manifest, build_agent_manifest, protocol_errors, write_assembled_prompt, init_agent_run
 from .blind_context import build_context, audit_packet_dir, load_profile, audit_profiles, profiles_manifest, export_context
+import subprocess
 
 def root_from(p:str|None)->Path:
     return Path(p or os.getcwd()).resolve()
@@ -368,6 +369,24 @@ def cmd_context_profiles(a):
     print(f"visibility_profiles_sha256: {d['visibility_profiles_sha256']}")
     for row in d['profiles']: print(f"{row['path']}: {row['sha256']}")
 
+
+def cmd_sandbox_audit(a):
+    repo = Repo(root_from(a.root))
+    script = repo.root / "scripts" / "test_agent_sandbox.sh"
+
+    if not script.exists():
+        raise SystemExit(f"sandbox audit script not found: {script}")
+
+    cp = subprocess.run(
+        ["/bin/bash", str(script)],
+        cwd=repo.root,
+        text=True,
+    )
+
+    if cp.returncode != 0:
+        raise SystemExit(cp.returncode)
+
+
 def main():
     p=argparse.ArgumentParser(prog='researchctl'); p.add_argument('--root')
     s=p.add_subparsers(dest='cmd',required=True)
@@ -400,6 +419,7 @@ def main():
     q=s.add_parser('context-audit'); q.add_argument('id'); q.add_argument('path'); q.set_defaults(fn=cmd_context_audit)
     q=s.add_parser('context-export'); q.add_argument('id'); q.add_argument('run_id'); q.add_argument('destination'); q.set_defaults(fn=cmd_context_export)
     q=s.add_parser('context-profiles'); q.set_defaults(fn=cmd_context_profiles)
+    q=s.add_parser('sandbox-audit'); q.set_defaults(fn=cmd_sandbox_audit)
     q=s.add_parser('provenance-init'); q.add_argument('id'); q.set_defaults(fn=cmd_provenance_init)
     q=s.add_parser('ablate'); q.add_argument('id'); q.set_defaults(fn=cmd_ablate)
     q=s.add_parser('redteam'); q.add_argument('id'); q.add_argument('--run-openai',action='store_true'); q.add_argument('--model'); q.set_defaults(fn=cmd_redteam)
