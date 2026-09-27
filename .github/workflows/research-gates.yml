@@ -191,30 +191,40 @@ jobs:
           path: reports/axioms
           if-no-files-found: warn
 
+
   exact-dependencies:
     name: exact-dependencies
     needs: lean-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
+
       - run: pip install -e .
+
       - name: Install elan
         run: |
           curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Cache Lake
+
+      - name: Cache Lake packages
         uses: actions/cache@v4
         with:
-          path: |
-            .lake/packages
-            .lake/build
-          key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+          path: .lake/packages
+          key: ${{ runner.os }}-lean-packages-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+
+      - name: Build Lean project
+        run: lake --no-ansi build
+
       - name: Extract elaborated dependency graphs
-       run: researchctl deps-exact-all
+        run: researchctl deps-exact-all
+
       - name: Build environment lock for artifact
         run: researchctl env-lock
+
       - uses: actions/upload-artifact@v4
         with:
           name: exact-mathematics-analysis
@@ -237,13 +247,13 @@ jobs:
             echo "## Mathematics CI/CD"
             echo "| Gate | Result |"
             echo "|---|---|"
-            echo "| Protocol | ${{ needs.protocol-gate.result }} |"
-            echo "| Tool tests | ${{ needs.unit-tests.result }} |"
-            echo "| Sabotage regression | ${{ needs.acceptance-suite.result }} |"
-            echo "| Agent protocol | ${{ needs.agent-protocol.result }} |"
-            echo "| Workflow security | ${{ needs.workflow-audit.result }} |"
-            echo "| Lean build | ${{ needs.lean-build.result }} |"
-            echo "| Axiom audit | ${{ needs.axiom-audit.result }} |"
-            echo "| Blind context | ${{ needs.blind-context.result }} |"            
-            echo "| Exact dependencies | ${{ needs.exact-dependencies.result }} |"
+            echo "| Protocol | ${{ needs['protocol-gate'].result }} |"
+            echo "| Tool tests | ${{ needs['unit-tests'].result }} |"
+            echo "| Sabotage regression | ${{ needs['acceptance-suite'].result }} |"
+            echo "| Agent protocol | ${{ needs['agent-protocol'].result }} |"
+            echo "| Workflow security | ${{ needs['workflow-audit'].result }} |"
+            echo "| Lean build | ${{ needs['lean-build'].result }} |"
+            echo "| Axiom audit | ${{ needs['axiom-audit'].result }} |"
+            echo "| Blind context | ${{ needs['blind-context'].result }} |"            
+            echo "| Exact dependencies | ${{ needs['exact-dependencies'].result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
