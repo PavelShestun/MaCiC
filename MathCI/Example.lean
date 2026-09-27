@@ -4,4 +4,9 @@ namespace MathCI
 theorem identity_example (n : Nat) : n = n := by
   rfl
 
+axiom Magic : False
+
+theorem bad_axiom : False :=
+  Magic
+
 end MathCI

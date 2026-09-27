@@ -1,0 +1,27 @@
+id: H-0002
+title: Custom axiom sabotage test
+status: SPEC_FROZEN
+created: '2026-09-27'
+owners:
+  research: ''
+  formalization: ''
+statement:
+  informal: False follows from a deliberately injected custom axiom.
+  lean_module: MathCI.Example
+  lean_declaration: MathCI.bad_axiom
+  lean_file: MathCI/Example.lean
+  frozen_sha256: 3fecffbd493bb7868e9df880e2ffd7fac92361f2c54961282e9107d5c581bbe3
+  freeze_commit: 154583472aeb2406917c2782b2e24a507d27fcbd
+assumptions: []
+definitions: []
+depends_on: []
+claims_of_novelty:
+  status: UNKNOWN
+  scope: ''
+  closest_known_results: []
+human_signoff:
+  specification: ''
+  mathematics: ''
+  formalization: ''
+  novelty: ''
+notes: ''
