@@ -60,6 +60,9 @@
           },
           {
             "context": "agent-protocol"
+          },
+          {
+            "context": "blind-context"
           }
         ]
       }

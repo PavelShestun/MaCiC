@@ -66,6 +66,62 @@ jobs:
           name: agent-protocol-manifest
           path: reports/agents/manifest.json
 
+  blind-context:
+    name: blind-context
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -e .
+
+      - name: Build blind context packets
+        run: |
+          researchctl context-build skeptic H-0001 \
+            --profile skeptic-blind \
+            --run-id CI-SKEPTIC
+
+          researchctl context-build proof-reviewer H-0001 \
+            --profile proof-blind \
+            --run-id CI-PROOF
+
+          researchctl context-build literature-reviewer H-0001 \
+            --profile literature-blind \
+            --run-id CI-LITERATURE
+
+          researchctl context-build semantic-reviewer H-0001 \
+            --profile semantic-blind \
+            --run-id CI-SEMANTIC
+
+          researchctl context-build reproducer H-0001 \
+            --profile reproducer-blind \
+            --run-id CI-REPRODUCER
+
+      - name: Audit blind context packets
+        run: |
+          researchctl context-audit H-0001 reports/agent-inputs/H-0001/CI-SKEPTIC
+          researchctl context-audit H-0001 reports/agent-inputs/H-0001/CI-PROOF
+          researchctl context-audit H-0001 reports/agent-inputs/H-0001/CI-LITERATURE
+          researchctl context-audit H-0001 reports/agent-inputs/H-0001/CI-SEMANTIC
+          researchctl context-audit H-0001 reports/agent-inputs/H-0001/CI-REPRODUCER
+
+      - name: Verify safe export boundary
+        run: |
+          researchctl context-export H-0001 CI-SKEPTIC /tmp/blind-export
+
+          test -f /tmp/blind-export/STATEMENT.md
+          test -f /tmp/blind-export/TASK.md
+
+          test ! -e /tmp/blind-export/ALIASES.json
+          test ! -e /tmp/blind-export/INPUT_MANIFEST.json
+
+          ! grep -R -n -E \
+            'H-0001|Smoke-test identity theorem|VERIFIED_RESULT|NOVELTY_REVIEWED|PROOF_RECONSTRUCTED|INDEPENDENTLY_REPRODUCED|MaCiC|Math CI/CD' \
+            /tmp/blind-export
+
   workflow-audit:
     name: workflow-audit
     runs-on: ubuntu-latest
@@ -156,7 +212,7 @@ jobs:
             .lake/build
           key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
       - name: Extract elaborated dependency graphs
-        run: researchctl deps-exact-all
+       run: researchctl deps-exact-all
       - name: Build environment lock for artifact
         run: researchctl env-lock
       - uses: actions/upload-artifact@v4
@@ -172,7 +228,7 @@ jobs:
   summary:
     name: research-summary
     if: always()
-    needs: [protocol-gate, unit-tests, acceptance-suite, agent-protocol, workflow-audit, lean-build, axiom-audit, exact-dependencies]
+    needs: [protocol-gate, unit-tests, acceptance-suite, agent-protocol, blind-context, workflow-audit, lean-build, axiom-audit, exact-dependencies]
     runs-on: ubuntu-latest
     steps:
       - name: Write summary
@@ -188,5 +244,6 @@ jobs:
             echo "| Workflow security | ${{ needs.workflow-audit.result }} |"
             echo "| Lean build | ${{ needs.lean-build.result }} |"
             echo "| Axiom audit | ${{ needs.axiom-audit.result }} |"
+            echo "| Blind context | ${{ needs.blind-context.result }} |"            
             echo "| Exact dependencies | ${{ needs.exact-dependencies.result }} |"
           } >> "$GITHUB_STEP_SUMMARY"
