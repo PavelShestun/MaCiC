@@ -1,5 +1,5 @@
 {
-  "protocol_version": "0.4.2",
+  "protocol_version": "0.4.3",
   "files": [
     {
       "path": "agents/common/OUTPUT_CONTRACT.md",
@@ -130,6 +130,7 @@
     "semantic-reviewer": "be8ec2d8ba698ceed58412a65dedf4fcc80aa85788d71b81f668dac0846cb255",
     "skeptic": "0f8ea3b1d55410950678d04101d2d4db94760e3cd30504683d4c255a5a2969a9"
   },
-  "agent_protocol_sha256": "66478c15e081dfc88b3d4158dc939dcff6e6651fa001ec4d5b857fabcf6704af",
-  "generated_utc": "2026-09-27T00:14:23.942015+00:00"
+  "visibility_profiles_sha256": "5535cb8ad5abeb7c670ac05bc95bde74d50a68304e745a5ea36d1b7a9ede307c",
+  "agent_protocol_sha256": "b0f29ddcea51c6c30e97e4c362ae632851ac3faa94fb06f1cff74d67efbc3ecd",
+  "generated_utc": "2026-09-27T13:34:22.083231+00:00"
 }

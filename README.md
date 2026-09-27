@@ -1,10 +1,10 @@
-# Mathematics CI/CD v0.4.2
+# Mathematics CI/CD v0.4.3
 
 A production-oriented template for AI-assisted mathematical research in Lean. The repository treats every headline theorem as a versioned research object with separate gates for formal validity, semantic adequacy, proof understanding, provenance, novelty, and independent reproduction.
 
 The central rule is simple: **a green Lean build is evidence of formal correctness relative to the encoded definitions and axioms; it is not by itself evidence of intended meaning or novelty.**
 
-## What v0.4.2 automates
+## What v0.4.3 automates
 
 ### Hard verification plane
 
@@ -31,6 +31,7 @@ The central rule is simple: **a green Lean build is evidence of formal correctne
 - Review-surface prioritization using provenance and dependency reachability.
 - Assumption-ablation experiment registry.
 - Adversarial LLM review with a split secret boundary.
+- **Blind Agent Context Layer**: role-specific visibility profiles, sanitized context packets, leakage scanning, and cryptographic input manifests.
 
 Analysis tools can focus reviewers. They cannot certify correctness, importance, or novelty.
 
@@ -170,7 +171,7 @@ Automated adversarial review is opt-in with the `math:redteam` label and is advi
 
 ## Human operating manual
 
-Start with **`docs/HUMAN_MANUAL.md`**. It connects the mathematical protocol, Git/GitHub workflow, human/agent roles, CI gates, review freshness, literature review, verification packets, and scientific CD/release process.
+Start with **`docs/HUMAN_MANUAL.tex`** (compiled copy: `docs/HUMAN_MANUAL.pdf`). It connects the mathematical protocol, Git/GitHub workflow, human/agent roles, CI gates, review freshness, literature review, verification packets, and scientific CD/release process.
 
 ## Local acceptance tests
 
@@ -196,7 +197,27 @@ Useful commands:
 ```bash
 researchctl agent-manifest
 researchctl agent-prompt skeptic H-0001
-researchctl agent-run-init formalizer H-0001 --model gpt-5.6-sol
+researchctl context-build skeptic H-0001 --profile skeptic-blind
+researchctl agent-run-init skeptic H-0001 --model gpt-5.6-sol --profile skeptic-blind
 ```
 
 `agent-manifest` hashes the canonical prompt set. The protocol hash is included in research fingerprints and verification packets. `agent-run-init` records the role/model/commit/statement/prompt hashes for a concrete AI-assisted step.
+
+
+## Blind Agent Context Layer
+
+For independent checks, do not give an agent the repository and ask it to ignore irrelevant files. Build an isolated packet instead:
+
+```bash
+researchctl context-profiles
+researchctl context-build skeptic H-0042 --profile skeptic-blind
+researchctl agent-run-init skeptic H-0042 --model <MODEL> --profile skeptic-blind
+```
+
+The packet is physically split into `agent-visible/` and `audit-only/`. Only `agent-visible/` may be supplied to the model; `audit-only/` contains `INPUT_MANIFEST.json` and `ALIASES.json` for provenance and must remain hidden. Export a safe model input with:
+
+```bash
+researchctl context-export H-0042 <RUN-ID> ./isolated-agent-input
+```
+
+The export command copies only the audited `agent-visible/` tree and refuses non-empty destinations. Blind packets intentionally omit global workflow context, other-agent outputs, proof status, novelty claims, and project goals unless a profile explicitly permits them.

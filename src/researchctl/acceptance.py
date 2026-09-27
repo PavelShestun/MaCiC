@@ -11,6 +11,7 @@ from .lean import statement_hash
 from .model import Repo, dump_yaml
 from .reviews import review_state
 from .semantic import write_snapshot
+from .blind_context import build_context, export_context, audit_packet_dir
 
 
 def _mk_repo(root: Path, status: str = "SPEC_FROZEN") -> Repo:
@@ -111,5 +112,38 @@ def run() -> list[dict[str, str]]:
         assert review_state(repo, "H-0001", "proof")["state"] == "STALE"
         assert any("proof review is stale" in x for x in validate_card(repo, repo.card_path("H-0001")))
     case("proof change makes proof review stale", stale)
+
+    def blind_context(root: Path) -> None:
+        repo = _mk_repo(root)
+        for d in ["agents/common", "agents/skeptic", "agents/profiles"]:
+            (root / d).mkdir(parents=True, exist_ok=True)
+        (root / "VERSION").write_text("0.4.3\n", encoding="utf-8")
+        (root / "agents/common/SYSTEM.md").write_text("global workflow secret", encoding="utf-8")
+        (root / "agents/common/OUTPUT_CONTRACT.md").write_text("contract", encoding="utf-8")
+        (root / "agents/skeptic/SYSTEM.md").write_text("role", encoding="utf-8")
+        (root / "agents/skeptic/TASK.md").write_text("role task", encoding="utf-8")
+        (root / "agents/skeptic/OUTPUT_SCHEMA.yaml").write_text("type: object\n", encoding="utf-8")
+        dump_yaml(root / "agents/profiles/skeptic-blind.yaml", {
+            "roles": ["skeptic"], "prompt_mode": "blind",
+            "include": ["frozen_statement"],
+            "task": "Try to falsify the supplied claim.",
+            "sanitize": {"hide_hypothesis_id": True, "neutralize_identifiers": True},
+            "leakage": {"forbid_project_title": True, "forbid_hypothesis_id": True, "forbid_global_stage_terms": True},
+        })
+        p = build_context(repo, "H-0001", "skeptic", "skeptic-blind", "ACCEPTANCE")
+        visible=p/"agent-visible"; audit=p/"audit-only"
+        text = "\n".join(x.read_text(encoding="utf-8") for x in visible.iterdir() if x.is_file())
+        assert "H-0001" not in text
+        assert "acceptance theorem" not in text
+        assert "global workflow secret" not in text
+        assert not (visible/"INPUT_MANIFEST.json").exists()
+        assert not (visible/"ALIASES.json").exists()
+        assert (audit/"INPUT_MANIFEST.json").exists()
+        dest=root/"isolated-export"
+        export_context(repo,"H-0001","ACCEPTANCE",dest)
+        assert not any(x.name in {"INPUT_MANIFEST.json","ALIASES.json"} for x in dest.rglob("*"))
+        (visible/"ALIASES.json").write_text('{"H-0001":"CLAIM"}',encoding="utf-8")
+        assert audit_packet_dir(p,["H-0001"])
+    case("blind context enforces two-zone export boundary", blind_context)
 
     return results

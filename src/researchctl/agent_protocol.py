@@ -30,6 +30,7 @@ def canonical_prompt_paths(repo: Repo) -> list[Path]:
 
 
 def build_agent_manifest(repo: Repo) -> dict:
+    from .blind_context import profiles_manifest
     files = []
     role_rows: dict[str, list[dict]] = {}
     for p in canonical_prompt_paths(repo):
@@ -45,12 +46,14 @@ def build_agent_manifest(repo: Repo) -> dict:
         raw = json.dumps(rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         role_hashes[role] = _sha256_bytes(raw)
 
-    canonical = {"files": files, "role_hashes": role_hashes}
+    profiles = profiles_manifest(repo)
+    canonical = {"files": files, "role_hashes": role_hashes, "visibility_profiles_sha256": profiles["visibility_profiles_sha256"]}
     raw = json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return {
         "protocol_version": (repo.root / "VERSION").read_text(encoding="utf-8").strip() if (repo.root / "VERSION").exists() else "",
         "files": files,
         "role_hashes": role_hashes,
+        "visibility_profiles_sha256": profiles["visibility_profiles_sha256"],
         "agent_protocol_sha256": _sha256_bytes(raw),
     }
 
@@ -122,7 +125,7 @@ def write_assembled_prompt(repo: Repo, role: str, hid: str) -> Path:
     return p
 
 
-def init_agent_run(repo: Repo, hid: str, role: str, model: str) -> Path:
+def init_agent_run(repo: Repo, hid: str, role: str, model: str, context_packet: Path | None = None) -> Path:
     import subprocess
     import yaml
     manifest = build_agent_manifest(repo)
@@ -135,6 +138,18 @@ def init_agent_run(repo: Repo, hid: str, role: str, model: str) -> Path:
     out.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     p = out / f"{stamp}-{role}.yaml"
+    context_meta = {}
+    if context_packet is not None:
+        mp = context_packet / "audit-only" / "INPUT_MANIFEST.json"
+        if mp.exists():
+            m = json.loads(mp.read_text(encoding="utf-8"))
+            context_meta = {
+                "visibility_profile": m.get("visibility_profile", ""),
+                "context_packet": context_packet.relative_to(repo.root).as_posix(),
+                "agent_visible_root": (context_packet / "agent-visible").relative_to(repo.root).as_posix(),
+                "context_packet_sha256": m.get("context_packet_sha256", ""),
+                "context_leakage_scan": m.get("leakage_scan", ""),
+            }
     data = {
         "hypothesis_id": hid,
         "role": role,
@@ -149,6 +164,7 @@ def init_agent_run(repo: Repo, hid: str, role: str, model: str) -> Path:
         "output_artifacts": [],
         "outcome": "IN_PROGRESS",
         "notes": "",
+        **context_meta,
     }
     p.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
     return p

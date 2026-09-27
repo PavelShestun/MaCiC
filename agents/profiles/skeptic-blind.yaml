@@ -1,0 +1,35 @@
+name: skeptic-blind
+roles:
+- skeptic
+prompt_mode: blind
+include:
+- frozen_statement
+- definitions
+- assumptions
+- notation
+optional:
+- notation
+exclude:
+- project_description
+- generator_identity
+- generator_notes
+- existing_proof
+- proof_reconstruction
+- lean_success_status
+- other_agent_outputs
+- literature_results
+- novelty_claim
+- intended_application
+sanitize:
+  hide_hypothesis_id: true
+  neutralize_identifiers: true
+  redact_regex:
+  - MaCiC
+  - Math CI/CD
+leakage:
+  forbid_project_title: true
+  forbid_hypothesis_id: true
+  forbid_global_stage_terms: true
+task: Analyze the claim adversarially. Search for counterexamples, degenerate cases,
+  hidden tautologies, redundant or conclusion-encoding assumptions, and stronger statements.
+  Do not assume the claim is true.

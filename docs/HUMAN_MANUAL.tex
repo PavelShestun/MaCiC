@@ -37,7 +37,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\textcolor{gray}{Math CI/CD Human Manual}}
-\rhead{\textcolor{gray}{v0.4.2}}
+\rhead{\textcolor{gray}{v0.4.3}}
 \cfoot{\textcolor{gray}{\thepage/\pageref{LastPage}}}
 \renewcommand{\headrulewidth}{0.3pt}
 \setlength{\headheight}{14pt}
@@ -79,7 +79,7 @@
 \textbf{Назначение:} сделать математическую разработку с Lean и LLM воспроизводимой, проверяемой, понятной человеку и устойчивой к незаметному изменению утверждения, скрытым аксиомам, устаревшим review и ложным заявлениям о новизне.
 \end{tcolorbox}
 \vfill
-{\large Версия 0.4.2\par}
+{\large Версия 0.4.3\par}
 {\normalsize 27 сентября 2026\par}
 \vspace{8mm}
 {\small Нормативный источник для людей: \texttt{docs/HUMAN\_MANUAL.tex}. Markdown-файлы репозитория являются краткими operational notes и не заменяют этот документ.\par}
@@ -387,6 +387,7 @@ researchctl audit H-0042
 \texttt{unit-tests} & Тестирует реализацию \texttt{researchctl}. Не тестирует вашу математику напрямую. \\
 \texttt{acceptance-suite} & Запускает sabotage regressions: baseline, \texttt{sorry}, invalid Lean references, statement drift, stale proof review и другие control failures. \\
 \texttt{agent-protocol} & Проверяет полноту canonical prompt files, вычисляет общий/role SHA-256 и публикует manifest как CI artifact. \\
+\texttt{blind-context} & Строит изолированные role-specific context packets, проверяет visibility profiles и сканирует пакеты на утечки запрещённого глобального контекста. \\
 \texttt{workflow-audit} & Проверяет опасные GitHub Actions patterns. Privileged execution untrusted PR code с secrets является ошибкой. \\
 \texttt{lean-build} & Показывает, что Lean принимает код с зарегистрированным toolchain. Не доказывает novelty/meaning. \\
 \texttt{axiom-audit} & Делает transitive trusted-base traversal и применяет project axiom allowlist. \\
@@ -402,6 +403,7 @@ PR mergeable только когда required machine checks зелёные \tex
 pytest -q
 researchctl acceptance
 researchctl agent-manifest
+researchctl context-profiles
 researchctl validate
 researchctl workflow-audit
 lake build
@@ -431,7 +433,7 @@ researchctl fingerprint H-0042
 researchctl packet H-0042
 \end{lstlisting}
 
-Verification packet должен содержать hypothesis card, Lean source, statement snapshot, proof reconstruction, literature/provenance evidence, reviews, dependency reports, environment lock, canonical agent prompt files, agent protocol manifest, provenance записей конкретных agent runs и SHA-256 manifest.
+Verification packet должен содержать hypothesis card, Lean source, statement snapshot, proof reconstruction, literature/provenance evidence, reviews, dependency reports, environment lock, canonical agent prompt files, visibility profiles, blind-context input manifests, agent protocol manifest, provenance записей конкретных agent runs и SHA-256 manifest.
 
 Research-release workflow запускается только для \status{VERIFIED\_RESULT} и должен быть защищён GitHub Environment с human approval. Рекомендуемый immutable tag:
 
@@ -532,6 +534,61 @@ researchctl agent-run-init formalizer H-0042 \
 \texttt{docs/PROMPTS.md} является только кратким индексом. При любом расхождении нормативными для агентов считаются файлы в \texttt{agents/}. Human sign-off при этом по-прежнему не может быть заменён agent output schema.
 \end{warningbox}
 
+
+\subsection{Blind Agent Context Layer: изоляция контекста}
+
+Простого разделения ролей недостаточно. Если агенту дать весь checkout и только написать ``не смотри на другие этапы'', он всё равно знает глобальную цель, результаты других ролей и желаемый исход. Для независимых стадий используется \textbf{context firewall}: агент получает физически отдельный минимальный пакет, а не репозиторий.
+
+\begin{principle}
+Независимый agent run должен быть воспроизводим как функция от явного input packet. Отсутствие доступа к скрытому контексту обеспечивается структурой входа, а не обещанием агента игнорировать файлы.
+\end{principle}
+
+Канонические visibility profiles лежат в \texttt{agents/profiles/}.
+
+\begin{lstlisting}
+researchctl context-profiles
+researchctl context-build skeptic H-0042 \
+  --profile skeptic-blind
+researchctl context-build proof-reviewer H-0042 \
+  --profile proof-blind
+\end{lstlisting}
+
+Пакет создаётся в \texttt{reports/agent-inputs/H-XXXX/<RUN-ID>/} и содержит только разрешённые артефакты, нейтральный task и \texttt{INPUT\_MANIFEST.json}. Manifest фиксирует profile hash, statement hash, protocol hash, included artifacts, declared exclusions, sanitization policy, leakage scan и \texttt{context\_packet\_sha256}.
+
+\begin{tabularx}{\textwidth}{@{}p{.25\textwidth}Y@{}}
+\toprule
+Уровень изоляции & Что скрывается \\
+\midrule
+Role separation & Только ответственность; общий контекст может быть известен. Слабая изоляция. \\
+Output isolation & Outputs других агентов. \\
+Task blindness & Желаемый глобальный исход, proof status, downstream цели. \\
+Provenance blindness & Кто сгенерировал claim, generator reasoning, другие reviews. \\
+Goal blindness & Максимально нейтральная локальная математическая постановка без project-specific цели. \\
+\bottomrule
+\end{tabularx}
+
+Для \texttt{skeptic-blind} по умолчанию разрешены frozen statement, definitions, assumptions и notation; запрещены existing proof, proof reconstruction, Lean-success status, literature results, novelty claim, intended application и outputs других агентов. \texttt{proof-blind} не должен знать даже о существовании accepted formal proof: его задача --- независимо вывести человеческий proof sketch из statement/definitions/assumptions.
+
+\subsubsection{Sanitization и пределы blindness}
+
+Профиль может скрыть H-ID, заменить project-specific identifiers нейтральными alias'ами и удалить configured markers. Это снижает anchoring, но не даёт логической гарантии, что модель не догадается о тематике по самой математике. Корректная формулировка аудита: ``глобальная задача не была явно включена в зафиксированный input packet''.
+
+\begin{dangerbox}
+Blind-run не считается независимым, если агент имел полный checkout, доступ к git history/search, outputs других ролей или project overview. Для blind-run не используйте symlink на repository и не давайте shell с рабочей директорией проекта. Передавайте только скомпилированный context packet.
+\end{dangerbox}
+
+\subsubsection{Привязка запуска к пакету}
+
+\begin{lstlisting}
+researchctl agent-run-init skeptic H-0042 \
+  --model <MODEL> \
+  --profile skeptic-blind
+\end{lstlisting}
+
+Run record содержит visibility profile, путь к context packet, его SHA-256 и результат leakage scan. При изменении profile, statement или разрешённых входов создаётся новый packet/run; старые hashes не переписываются.
+
+GitHub job \texttt{blind-context} строит smoke-packets для нескольких blind roles и выполняет автоматический leakage scan. Этот gate является required check вместе с \texttt{agent-protocol}. После merge новой версии обновите уже активный server-side ruleset командой \cmd{scripts/update\_github\_ruleset.sh OWNER/REPO}; bootstrap-скрипт существующий ruleset намеренно не перезаписывает.
+
 \section{Incident response и sabotage testing}
 
 Control system считается проверенным не одним зелёным build, а способностью правильно падать при атаке. После изменения infrastructure запускайте \cmd{researchctl acceptance} и полный matrix из \texttt{docs/FIRST\_RUN.md}.
@@ -616,7 +673,8 @@ Control system считается проверенным не одним зел�
 \texttt{research-policy.yaml} & policy-as-code \\
 \texttt{docs/HUMAN\_MANUAL.tex} & canonical human SOP \\
 \texttt{AGENTS.md} & concise machine/agent contract \\
-\texttt{agents/} & canonical versioned prompts and output schemas for AI roles \\
+\texttt{agents/} & canonical versioned prompts, visibility profiles and output schemas for AI roles \\
+\texttt{reports/agent-inputs/H-XXXX/} & isolated blind-context packets with input manifests \\
 \texttt{agent-runs/H-XXXX/} & provenance records of concrete AI-assisted runs \\
 \texttt{reports/agents/manifest.json} & cryptographic manifest of the agent protocol \\
 \bottomrule
