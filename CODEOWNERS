@@ -1,12 +1,18 @@
-# Replace placeholders with real GitHub users/teams before requiring CODEOWNERS review.
-/hypotheses/ @math-reviewers
-/MathCI/ @lean-reviewers
-/*.lean @lean-reviewers
-/lit/ @literature-reviewers
-/proofs/ @math-reviewers
-/reviews/ @research-leads
-/results/ @research-leads
-/research-policy.yaml @research-leads
-/.github/ @research-leads
-/src/researchctl/ @research-infra
-/scripts/ @research-infra
+# Solo acceptance configuration.
+# Replace with real reviewers/teams when the project becomes multi-person.
+
+* @PavelShestun
+
+/hypotheses/ @PavelShestun
+/MathCI/ @PavelShestun
+/*.lean @PavelShestun
+/lit/ @PavelShestun
+/proofs/ @PavelShestun
+/reviews/ @PavelShestun
+/results/ @PavelShestun
+/research-policy.yaml @PavelShestun
+/.github/ @PavelShestun
+/src/researchctl/ @PavelShestun
+/scripts/ @PavelShestun
+/agents/ @PavelShestun
+/CODEOWNERS @PavelShestun
