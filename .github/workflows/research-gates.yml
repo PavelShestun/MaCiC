@@ -90,14 +90,13 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Cache Lake
-        if: steps.lean.outputs.present == 'true'
+      - name: Cache Lake packages
         uses: actions/cache@v4
         with:
-          path: |
-            .lake/packages
-            .lake/build
-          key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+          path: .lake/packages
+          key: ${{ runner.os }}-lean-packages-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+      - name: Build Lean project
+        run: lake --no-ansi build
       - name: Build Lean project
         if: steps.lean.outputs.present == 'true'
         run: lake --no-ansi build
