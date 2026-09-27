@@ -1,0 +1,28 @@
+name: literature-blind
+roles:
+- literature-reviewer
+- provenance-auditor
+prompt_mode: blind
+include:
+- frozen_statement
+- definitions
+- assumptions
+exclude:
+- existing_proof
+- lean_success_status
+- generator_notes
+- other_reviews
+- novelty_claim
+- intended_application
+sanitize:
+  hide_hypothesis_id: true
+  neutralize_identifiers: false
+  redact_regex:
+  - MaCiC
+leakage:
+  forbid_project_title: true
+  forbid_hypothesis_id: true
+  forbid_global_stage_terms: true
+task: Search for mathematically equivalent, stronger, weaker, and structurally related
+  published results. Do not assume originality and do not assume the claim has been
+  proved.

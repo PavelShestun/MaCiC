@@ -6,8 +6,7 @@ __pycache__/
 *.pyc
 .DS_Store
 verification_packets/
-
-# Python build artifacts
+reports/agent-inputs/
 *.egg-info/
-__pycache__/
-.pytest_cache/
+*:Zone.Identifier
+isolated-agent-input/

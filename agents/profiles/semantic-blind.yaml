@@ -1,0 +1,31 @@
+name: semantic-blind
+roles:
+- semantic-reviewer
+prompt_mode: blind
+include:
+- frozen_statement
+- informal_statement
+- definitions
+- assumptions
+- notation
+optional:
+- notation
+exclude:
+- existing_proof
+- lean_success_status
+- generator_notes
+- literature_results
+- novelty_claim
+- other_reviews
+sanitize:
+  hide_hypothesis_id: true
+  neutralize_identifiers: false
+  redact_regex:
+  - MaCiC
+leakage:
+  forbid_project_title: false
+  forbid_hypothesis_id: true
+  forbid_global_stage_terms: true
+task: Compare the formal-style claim, informal claim, definitions, and assumptions.
+  Identify mismatches, hidden strength, ambiguity, or conclusion-encoding definitions
+  without considering any proof.

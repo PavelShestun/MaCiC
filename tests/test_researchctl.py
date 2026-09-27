@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from researchctl.lean import strip_comments_and_strings, find_placeholders, extract_declaration_header, statement_hash
 from researchctl.model import TRANSITIONS
@@ -215,3 +216,87 @@ def test_agent_manifest_contains_role_hashes(tmp_path: Path):
     assert 'common' in data['role_hashes']
     assert 'skeptic' in data['role_hashes']
     assert len(data['agent_protocol_sha256']) == 64
+
+from researchctl.blind_context import build_context, audit_profiles, audit_packet_dir, load_profile, export_context
+
+
+def _blind_repo(tmp_path: Path) -> Repo:
+    for d in ['hypotheses','reports/statements','agents/common','agents/skeptic','agents/profiles']:
+        (tmp_path/d).mkdir(parents=True,exist_ok=True)
+    (tmp_path/'VERSION').write_text('0.4.3\n',encoding='utf-8')
+    dump_yaml(tmp_path/'hypotheses/H-0042.yaml',{
+        'id':'H-0042','title':'Secret Scaling Project Main Theorem','status':'SPEC_FROZEN',
+        'statement':{'frozen_sha256':'abc','informal':'For every n, n = n.','lean_declaration':'Secret.MainTheorem','lean_module':'Secret'},
+        'definitions':[{'name':'SecretObject','description':'an arbitrary object'}],
+        'assumptions':['n is a natural number'],
+    })
+    (tmp_path/'reports/statements/H-0042.lean').write_text('theorem Secret.MainTheorem (n : Nat) : n = n\n',encoding='utf-8')
+    (tmp_path/'agents/common/SYSTEM.md').write_text('global project workflow hidden',encoding='utf-8')
+    (tmp_path/'agents/common/OUTPUT_CONTRACT.md').write_text('contract',encoding='utf-8')
+    (tmp_path/'agents/skeptic/SYSTEM.md').write_text('skeptic system',encoding='utf-8')
+    (tmp_path/'agents/skeptic/TASK.md').write_text('skeptic task',encoding='utf-8')
+    (tmp_path/'agents/skeptic/OUTPUT_SCHEMA.yaml').write_text('type: object\n',encoding='utf-8')
+    dump_yaml(tmp_path/'agents/profiles/skeptic-blind.yaml',{
+        'name':'skeptic-blind','roles':['skeptic'],'prompt_mode':'blind',
+        'include':['frozen_statement','definitions','assumptions'],
+        'exclude':['project_goal','existing_proof'],
+        'task':'Try to falsify the supplied claim without assuming it is true.',
+        'sanitize':{'hide_hypothesis_id':True,'neutralize_identifiers':True},
+        'leakage':{'forbid_project_title':True,'forbid_hypothesis_id':True,'forbid_global_stage_terms':True},
+    })
+    return Repo(tmp_path)
+
+
+def test_blind_context_hides_hid_title_and_role_workflow(tmp_path: Path):
+    repo=_blind_repo(tmp_path)
+    p=build_context(repo,'H-0042','skeptic','skeptic-blind','RUN1')
+    visible=p/'agent-visible'; audit=p/'audit-only'
+    assert visible.is_dir() and audit.is_dir()
+    all_text='\n'.join(x.read_text(encoding='utf-8') for x in visible.iterdir() if x.is_file())
+    assert 'H-0042' not in all_text
+    assert 'Secret Scaling Project Main Theorem' not in all_text
+    assert 'global project workflow hidden' not in all_text
+    assert 'Secret.MainTheorem' not in all_text
+    assert not (visible/'INPUT_MANIFEST.json').exists()
+    assert not (visible/'ALIASES.json').exists()
+    assert (audit/'INPUT_MANIFEST.json').exists()
+    assert (audit/'ALIASES.json').exists()
+    m=json.loads((audit/'INPUT_MANIFEST.json').read_text(encoding='utf-8'))
+    assert m['leakage_scan']=='PASS'
+    assert m['visibility_profile']=='skeptic-blind'
+    assert len(m['context_packet_sha256'])==64
+
+
+def test_context_export_contains_only_agent_visible_payload(tmp_path: Path):
+    repo=_blind_repo(tmp_path)
+    p=build_context(repo,'H-0042','skeptic','skeptic-blind','RUN3')
+    dest=tmp_path/'exported'
+    export_context(repo,'H-0042','RUN3',dest)
+    names={x.name for x in dest.rglob('*') if x.is_file()}
+    assert 'STATEMENT.md' in names and 'TASK.md' in names
+    assert 'INPUT_MANIFEST.json' not in names
+    assert 'ALIASES.json' not in names
+    text='\n'.join(x.read_text(encoding='utf-8') for x in dest.rglob('*') if x.is_file())
+    assert 'H-0042' not in text
+    assert 'Secret Scaling Project Main Theorem' not in text
+
+
+def test_context_audit_rejects_audit_metadata_in_visible_tree(tmp_path: Path):
+    repo=_blind_repo(tmp_path)
+    p=build_context(repo,'H-0042','skeptic','skeptic-blind','RUN4')
+    (p/'agent-visible'/'ALIASES.json').write_text('{"H-0042":"CLAIM"}',encoding='utf-8')
+    errs=audit_packet_dir(p,['H-0042'])
+    assert any('audit-only metadata present' in e for e in errs)
+
+
+def test_blind_context_rejects_profile_for_wrong_role(tmp_path: Path):
+    repo=_blind_repo(tmp_path)
+    import pytest
+    with pytest.raises(ValueError):
+        build_context(repo,'H-0042','formalizer','skeptic-blind','RUN2')
+
+
+def test_context_leakage_scanner_detects_forbidden_marker(tmp_path: Path):
+    p=tmp_path/'packet'; p.mkdir(); (p/'TASK.md').write_text('VERIFIED_RESULT',encoding='utf-8')
+    errs=audit_packet_dir(p,['VERIFIED_RESULT'])
+    assert errs

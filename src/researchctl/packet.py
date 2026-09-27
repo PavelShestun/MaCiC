@@ -5,6 +5,7 @@ from .model import Repo, load_yaml
 from .lean import statement_hash
 from .fingerprint import write_fingerprint
 from .agent_protocol import write_agent_manifest, canonical_prompt_paths
+from .blind_context import profile_paths
 
 def build_packet(repo:Repo,hid:str,out:Path)->Path:
     card=repo.load_card(hid)
@@ -37,8 +38,11 @@ def build_packet(repo:Repo,hid:str,out:Path)->Path:
     runs=repo.root/'agent-runs'/hid
     if runs.exists(): files += list(runs.glob('*.yaml'))
     files += canonical_prompt_paths(repo)
+    files += profile_paths(repo)
     prompt_dir=repo.root/'reports'/'agents'/'prompts'
     if prompt_dir.exists(): files += list(prompt_dir.glob(f'{hid}-*.md'))
+    blind_root=repo.root/'reports'/'agent-inputs'/hid
+    if blind_root.exists(): files += [x for x in blind_root.rglob('*') if x.is_file()]
     lf=card.get('statement',{}).get('lean_file')
     if lf and (repo.root/lf).exists(): files.append(repo.root/lf)
     manifest={'id':hid,'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'files':[]}

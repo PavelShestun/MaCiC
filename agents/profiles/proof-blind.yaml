@@ -1,0 +1,34 @@
+name: proof-blind
+roles:
+- proof-reviewer
+prompt_mode: blind
+include:
+- frozen_statement
+- definitions
+- assumptions
+- notation
+optional:
+- notation
+exclude:
+- lean_source
+- exact_dependencies
+- proof_reconstruction
+- generator_notes
+- other_reviews
+- literature_results
+- novelty_claim
+- lean_success_status
+- project_goal
+sanitize:
+  hide_hypothesis_id: true
+  neutralize_identifiers: true
+  redact_regex:
+  - MaCiC
+  - Math CI/CD
+leakage:
+  forbid_project_title: true
+  forbid_hypothesis_id: true
+  forbid_global_stage_terms: true
+task: Independently derive a human mathematical argument for the supplied claim from
+  the supplied definitions and assumptions. Identify the smallest set of nontrivial
+  transitions. Do not assume a formal proof exists.

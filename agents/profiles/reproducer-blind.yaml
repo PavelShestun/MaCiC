@@ -1,0 +1,28 @@
+name: reproducer-blind
+roles:
+- reproducer
+prompt_mode: blind
+include:
+- frozen_statement
+- definitions
+- assumptions
+- lean_source
+exclude:
+- generator_notes
+- generator_identity
+- proof_reconstruction
+- other_agent_outputs
+- final_review
+- novelty_claim
+sanitize:
+  hide_hypothesis_id: true
+  neutralize_identifiers: false
+  redact_regex:
+  - MaCiC
+leakage:
+  forbid_project_title: true
+  forbid_hypothesis_id: true
+  forbid_global_stage_terms: true
+task: Using only the supplied mathematical statement and source material, determine
+  whether the object can be independently reconstructed and checked from this packet.
+  Record every missing dependency or ambiguity.

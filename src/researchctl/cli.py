@@ -22,6 +22,7 @@ from .references import validate_lean_reference, format_reference_help
 from .reviews import review_state
 from .acceptance import run as run_acceptance
 from .agent_protocol import write_agent_manifest, build_agent_manifest, protocol_errors, write_assembled_prompt, init_agent_run
+from .blind_context import build_context, audit_packet_dir, load_profile, audit_profiles, profiles_manifest, export_context
 
 def root_from(p:str|None)->Path:
     return Path(p or os.getcwd()).resolve()
@@ -299,9 +300,73 @@ def cmd_agent_run_init(a):
     if errs:
         for e in errs: print(f"ERROR: {e}")
         raise SystemExit(1)
-    write_assembled_prompt(repo,a.role,a.id)
-    p=init_agent_run(repo,a.id,a.role,a.model); print(p.relative_to(repo.root))
+    context_packet=None
+    if a.profile:
+        perrs=audit_profiles(repo)
+        if perrs:
+            for e in perrs: print(f"ERROR: {e}")
+            raise SystemExit(1)
+        context_packet=build_context(repo,a.id,a.role,a.profile,a.run_id)
+        print(f"context: {context_packet.relative_to(repo.root)}")
+    else:
+        write_assembled_prompt(repo,a.role,a.id)
+    p=init_agent_run(repo,a.id,a.role,a.model,context_packet=context_packet); print(p.relative_to(repo.root))
 
+
+
+def cmd_context_build(a):
+    repo=Repo(root_from(a.root))
+    errs=protocol_errors(repo)+audit_profiles(repo)
+    if errs:
+        for e in errs: print(f"ERROR: {e}")
+        raise SystemExit(1)
+    try:
+        p=build_context(repo,a.id,a.role,a.profile,a.run_id)
+    except Exception as ex:
+        print(f"CONTEXT BUILD FAILED: {ex}",file=sys.stderr)
+        raise SystemExit(2)
+    print(p.relative_to(repo.root))
+    m=json.loads((p/'audit-only'/'INPUT_MANIFEST.json').read_text(encoding='utf-8'))
+    print(f"context_packet_sha256: {m['context_packet_sha256']}")
+    print(f"visibility_profile: {m['visibility_profile']}")
+
+def cmd_context_audit(a):
+    repo=Repo(root_from(a.root))
+    p=(repo.root/a.path).resolve()
+    try:
+        p.relative_to(repo.root.resolve())
+    except ValueError:
+        print('ERROR: context packet must be inside repository',file=sys.stderr); raise SystemExit(2)
+    mpath=p/'audit-only'/'INPUT_MANIFEST.json'
+    if not mpath.exists(): print('ERROR: audit-only/INPUT_MANIFEST.json missing',file=sys.stderr); raise SystemExit(2)
+    m=json.loads(mpath.read_text(encoding='utf-8'))
+    prof=load_profile(repo,m['visibility_profile'])
+    card=repo.load_card(a.id)
+    from .blind_context import _forbidden_markers
+    errs=audit_packet_dir(p,_forbidden_markers(repo,a.id,prof))
+    if errs:
+        for e in errs: print(f"ERROR: {e}")
+        raise SystemExit(1)
+    print('blind context audit: PASS')
+
+
+def cmd_context_export(a):
+    repo=Repo(root_from(a.root))
+    try:
+        dest=export_context(repo,a.id,a.run_id,Path(a.destination))
+    except Exception as ex:
+        print(f"CONTEXT EXPORT FAILED: {ex}",file=sys.stderr)
+        raise SystemExit(2)
+    print(dest)
+
+def cmd_context_profiles(a):
+    repo=Repo(root_from(a.root)); errs=audit_profiles(repo)
+    if errs:
+        for e in errs: print(f"ERROR: {e}")
+        raise SystemExit(1)
+    d=profiles_manifest(repo)
+    print(f"visibility_profiles_sha256: {d['visibility_profiles_sha256']}")
+    for row in d['profiles']: print(f"{row['path']}: {row['sha256']}")
 
 def main():
     p=argparse.ArgumentParser(prog='researchctl'); p.add_argument('--root')
@@ -330,7 +395,11 @@ def main():
     q=s.add_parser('acceptance'); q.set_defaults(fn=cmd_acceptance)
     q=s.add_parser('agent-manifest'); q.set_defaults(fn=cmd_agent_manifest)
     q=s.add_parser('agent-prompt'); q.add_argument('role'); q.add_argument('id'); q.set_defaults(fn=cmd_agent_prompt)
-    q=s.add_parser('agent-run-init'); q.add_argument('role'); q.add_argument('id'); q.add_argument('--model',required=True); q.set_defaults(fn=cmd_agent_run_init)
+    q=s.add_parser('agent-run-init'); q.add_argument('role'); q.add_argument('id'); q.add_argument('--model',required=True); q.add_argument('--profile'); q.add_argument('--run-id'); q.set_defaults(fn=cmd_agent_run_init)
+    q=s.add_parser('context-build'); q.add_argument('role'); q.add_argument('id'); q.add_argument('--profile',required=True); q.add_argument('--run-id'); q.set_defaults(fn=cmd_context_build)
+    q=s.add_parser('context-audit'); q.add_argument('id'); q.add_argument('path'); q.set_defaults(fn=cmd_context_audit)
+    q=s.add_parser('context-export'); q.add_argument('id'); q.add_argument('run_id'); q.add_argument('destination'); q.set_defaults(fn=cmd_context_export)
+    q=s.add_parser('context-profiles'); q.set_defaults(fn=cmd_context_profiles)
     q=s.add_parser('provenance-init'); q.add_argument('id'); q.set_defaults(fn=cmd_provenance_init)
     q=s.add_parser('ablate'); q.add_argument('id'); q.set_defaults(fn=cmd_ablate)
     q=s.add_parser('redteam'); q.add_argument('id'); q.add_argument('--run-openai',action='store_true'); q.add_argument('--model'); q.set_defaults(fn=cmd_redteam)
