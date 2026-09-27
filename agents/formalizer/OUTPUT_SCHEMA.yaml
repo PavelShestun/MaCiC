@@ -1,0 +1,12 @@
+type: object
+required: [hypothesis_id, role, outcome, statement_changed, files_changed, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: formalizer}
+  outcome: {enum: [PROVED, BLOCKED, STATEMENT_CHANGE_REQUESTED]}
+  statement_changed: {type: boolean, const: false}
+  files_changed: {type: array, items: {type: string}}
+  helper_lemmas_added: {type: array, items: {type: string}}
+  dependencies_used: {type: array, items: {type: string}}
+  statement_change_request: {type: [string, 'null']}
+  unresolved_risks: {type: array, items: {type: string}}

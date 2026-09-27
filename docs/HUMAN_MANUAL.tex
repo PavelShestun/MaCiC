@@ -1,0 +1,655 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T2A,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage[a4paper,margin=22mm]{geometry}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{booktabs,longtable,tabularx,array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{lastpage}
+\usepackage{pifont}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{needspace}
+\usepackage{etoolbox}
+
+\definecolor{navy}{HTML}{17324D}
+\definecolor{blue}{HTML}{2F6690}
+\definecolor{lightblue}{HTML}{EDF4F8}
+\definecolor{green}{HTML}{2E6F40}
+\definecolor{lightgreen}{HTML}{EDF7F0}
+\definecolor{red}{HTML}{9E2A2B}
+\definecolor{lightred}{HTML}{FBEFEF}
+\definecolor{amber}{HTML}{8A5A00}
+\definecolor{lightamber}{HTML}{FFF7E6}
+\definecolor{gray}{HTML}{5F6B73}
+\definecolor{lightgray}{HTML}{F4F6F7}
+
+\hypersetup{colorlinks=true,linkcolor=navy,urlcolor=blue,citecolor=blue,pdftitle={Math CI/CD: Human Operating Manual},pdfauthor={Math CI/CD Project}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{gray}{Math CI/CD Human Manual}}
+\rhead{\textcolor{gray}{v0.4.2}}
+\cfoot{\textcolor{gray}{\thepage/\pageref{LastPage}}}
+\renewcommand{\headrulewidth}{0.3pt}
+\setlength{\headheight}{14pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{navy}}{\thesubsubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=1.5em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=3pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\status}[1]{\texttt{#1}}
+\newcommand{\cmd}[1]{\texttt{#1}}
+\newcommand{\ok}{\textcolor{green}{\ding{51}}}
+\newcommand{\bad}{\textcolor{red}{\ding{55}}}
+
+\lstdefinestyle{shell}{basicstyle=\ttfamily\small,backgroundcolor=\color{lightgray},frame=single,rulecolor=\color{gray!35},breaklines=true,columns=fullflexible,keepspaces=true,showstringspaces=false,xleftmargin=4pt,xrightmargin=4pt,aboveskip=7pt,belowskip=7pt}
+\lstdefinestyle{lean}{style=shell}
+\lstdefinestyle{yaml}{style=shell}
+\lstset{style=shell}
+
+\newtcolorbox{principle}[1][]{colback=lightblue,colframe=blue,title=\textbf{Principle},fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,#1}
+\newtcolorbox{warningbox}[1][]{colback=lightamber,colframe=amber,title=\textbf{Attention},fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,#1}
+\newtcolorbox{dangerbox}[1][]{colback=lightred,colframe=red,title=\textbf{Forbidden / blocking condition},fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,#1}
+\newtcolorbox{checklistbox}[1][]{colback=lightgreen,colframe=green,title=\textbf{Checklist},fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,#1}
+
+\begin{document}
+\selectlanguage{russian}
+\begin{titlepage}
+\centering
+\vspace*{24mm}
+{\Huge\bfseries\color{navy} Math CI/CD\par}
+\vspace{5mm}
+{\LARGE Руководство по AI-ассистированным математическим исследованиям\par}
+\vspace{9mm}
+{\large Канонический human operating manual / SOP\par}
+\vfill
+\begin{tcolorbox}[width=.82\textwidth,colback=lightblue,colframe=blue,arc=2pt]
+\centering
+\textbf{Назначение:} сделать математическую разработку с Lean и LLM воспроизводимой, проверяемой, понятной человеку и устойчивой к незаметному изменению утверждения, скрытым аксиомам, устаревшим review и ложным заявлениям о новизне.
+\end{tcolorbox}
+\vfill
+{\large Версия 0.4.2\par}
+{\normalsize 27 сентября 2026\par}
+\vspace{8mm}
+{\small Нормативный источник для людей: \texttt{docs/HUMAN\_MANUAL.tex}. Markdown-файлы репозитория являются краткими operational notes и не заменяют этот документ.\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\section{Назначение и модель доверия}
+
+Этот репозиторий является не только кодовой базой, но и \textbf{аудиторским следом математического результата}. Работа считается завершённой не тогда, когда агент написал Lean-код и не тогда, когда \cmd{lake build} зелёный, а когда раздельно собраны и актуальны доказательства пяти разных утверждений.
+
+\begin{principle}
+Никогда не объединяйте в один вопрос:
+\begin{enumerate}
+\item принимает ли Lean proof term;
+\item соответствует ли Lean statement математике, которую команда намеревалась доказать;
+\item понимает ли человек ключевые переходы доказательства;
+\item является ли результат новым относительно литературы;
+\item воспроизводится ли результат независимо из чистого checkout.
+\end{enumerate}
+Зелёный Lean build отвечает только на первый вопрос относительно закодированных определений и доверенной базы.
+\end{principle}
+
+Финальный статус \status{VERIFIED\_RESULT} не присваивается LLM и не эквивалентен успешной компиляции. Это состояние governance, которое допускается только после согласования machine evidence и требуемых human reviews.
+
+\subsection{Что автоматизация может и не может гарантировать}
+
+\begin{tabularx}{\textwidth}{@{}p{.29\textwidth}YY@{}}
+\toprule
+Слой & Автоматизация хорошо проверяет & Требует содержательной человеческой проверки \\
+\midrule
+Lean/kernel & build, placeholders, зарегистрированные declarations, зависимости, trusted-base policy & адекватность определения и научный смысл формализации \\
+Statement control & frozen hash, semantic diff, drift & является ли новая формулировка правильной постановкой задачи \\
+Proof evidence & fingerprints, stale review, dependency surface & понимание нетривиальных переходов и математическая ценность \\
+Literature & наличие воспроизводимого журнала, provenance fields & полнота поиска, эквивалентность/приоритет, корректность novelty language \\
+Reproduction & commit/environment/evidence binding & независимость reproducer и отсутствие скрытого generator context \\
+\bottomrule
+\end{tabularx}
+
+\section{Роли и разделение ответственности}
+
+Один человек может выполнять несколько ролей в маленькой группе, но роли должны оставаться концептуально раздельными. Нельзя превращать авторство proof в автоматическое semantic, novelty или final approval.
+
+\begin{longtable}{@{}p{.22\textwidth}p{.72\textwidth}@{}}
+\toprule
+\textbf{Роль} & \textbf{Ответственность} \\
+\midrule
+\endhead
+Research Owner & Формулирует научный вопрос, область применимости, intended definitions и interpretation. Регистрирует гипотезу до длительного proof search. Не усиливает assumptions молча, когда proof search затрудняется. \\
+Formalizer & Переводит intended statement в Lean, поддерживает buildability, документирует нетривиальные formalization choices. Может предложить изменение statement, но не менять frozen mathematics скрытно. \\
+Skeptic / adversarial reviewer & Ищет контрпримеры, вырожденные случаи, лишние assumptions, circularity, tautological definitions, более сильные известные результаты и пути тривиализации. \\
+Proof-understanding reviewer & Восстанавливает обычное математическое доказательство, выделяет ключевые переходы и проверяет, что proof не только существует как term, но понятен. \\
+Literature / provenance reviewer & Пытается опровергнуть novelty; фиксирует запросы, индексы, кандидатов, citation chasing, equivalence checks и proof fingerprints. \\
+Independent reproducer & Работает из чистого checkout на фиксированном commit/environment, желательно без приватного контекста генератора. \\
+Final reviewer & Проверяет соответствие claim language накопленному evidence и отсутствие stale reviews. \\
+LLM / agents & Могут предлагать conjectures, Lean code, counterexamples, queries, dependency summaries и critiques. Не имеют права имитировать human sign-off, объявлять novelty доказанной или менять frozen statement без явного SCR. \\
+\bottomrule
+\end{longtable}
+
+\section{Исследовательский объект и структура репозитория}
+
+Каждое существенное утверждение получает неизменяемый идентификатор вида \status{H-0042}. Один H-ID соответствует одному научному объекту. Материально другое утверждение получает новый H-ID, а связь фиксируется в metadata.
+
+\begin{lstlisting}
+researchctl new H-0042 "Scaling rigidity candidate"
+git switch -c hyp/H-0042-scaling-rigidity
+\end{lstlisting}
+
+Каноническая карточка: \texttt{hypotheses/H-0042.yaml}. Связанное evidence хранится под тем же ID:
+
+\begin{lstlisting}
+lit/H-0042.md
+proofs/H-0042.md
+provenance/H-0042.yaml
+ablations/H-0042/
+reviews/H-0042/
+reports/.../H-0042.*
+\end{lstlisting}
+
+\begin{warningbox}
+Markdown в \texttt{lit/} и \texttt{proofs/} допустим как рабочий журнал и краткая реконструкция. Нормативные инструкции для людей должны жить в LaTeX-документации. Machine-readable состояние хранится в YAML/JSON; Lean остаётся источником формальной истины.
+\end{warningbox}
+
+\section{Жизненный цикл результата}
+
+Нормальный путь:
+
+\begin{center}
+\status{CANDIDATE} $\rightarrow$ \status{SPEC\_DRAFT} $\rightarrow$ \status{SPEC\_FROZEN} $\rightarrow$ \status{FORMALIZED} $\rightarrow$ \status{SEMANTIC\_REVIEWED} $\rightarrow$ \status{PROOF\_RECONSTRUCTED} $\rightarrow$ \status{NOVELTY\_REVIEWED} $\rightarrow$ \status{INDEPENDENTLY\_REPRODUCED} $\rightarrow$ \status{VERIFIED\_RESULT}
+\end{center}
+
+\begin{longtable}{@{}p{.25\textwidth}p{.67\textwidth}@{}}
+\toprule
+\textbf{Статус} & \textbf{Научный смысл} \\
+\midrule
+\endhead
+\status{CANDIDATE} & Есть вопрос/гипотеза; точная формализация может быть неполной. Фиксируются intended phenomenon, scope, assumptions, известные связи и первые falsification targets. \\
+\status{SPEC\_DRAFT} & Стабилизируются definitions, quantifiers, domains и assumptions. Это правильное место для semantic redesign. \\
+\status{SPEC\_FROZEN} & Точный Lean statement заморожен и получает SHA-256 snapshot. Изменение binders/assumptions/conclusion после этого является scientific change, а не refactor. \\
+\status{FORMALIZED} & Полный Lean proof существует без запрещённых placeholders и с допустимой trusted base. Не означает meaningful/novel/understood. \\
+\status{SEMANTIC\_REVIEWED} & Человек проверил соответствие Lean statement intended mathematics и отсутствие скрытой тривиализации. \\
+\status{PROOF\_RECONSTRUCTED} & Человек понимает ключевые переходы, проверил circularity/trivialization risks и review surface. \\
+\status{NOVELTY\_REVIEWED} & Literature/provenance audit достаточно полон для заявляемого уровня novelty; поиск воспроизводим. \\
+\status{INDEPENDENTLY\_REPRODUCED} & Отдельный reproducer воспроизвёл результат из чистого checkout/environment и связал review с конкретными fingerprints. \\
+\status{VERIFIED\_RESULT} & Все требуемые evidence свежи, sign-offs выполнены, policy проходит, final claim language утверждён. \\
+\bottomrule
+\end{longtable}
+
+Допустимые terminal/side outcomes: \status{REFUTED}, \status{KNOWN\_RESULT}, \status{SPECIFICATION\_BUG}, \status{BLOCKED}, \status{INCONCLUSIVE}. Полезные отрицательные результаты следует сохранять и merge'ить, а не удалять.
+
+\section{Git и GitHub: рабочий протокол}
+
+\subsection{Ветки}
+
+\begin{lstlisting}
+hyp/H-0042-short-name       # hypothesis/proof development
+formal/H-0042-short-name    # formalization
+skeptic/H-0042-short-name   # counterexamples/adversarial work
+lit/H-0042-short-name       # literature/provenance
+proof/H-0042-short-name     # human proof reconstruction
+scr/H-0042-short-name       # statement change request
+infra/short-name            # CI/CD infrastructure
+\end{lstlisting}
+
+Не используйте долгоживущие персональные ветки. H-ID должен присутствовать в branch/PR, изменяющем scientific object.
+
+\subsection{Issue и Draft PR}
+
+Issue создаётся до устойчивой работы и содержит H-ID, informal claim, scope, assumptions/definitions, мотивацию, known related results, counterexample targets, owners/reviewers и текущий статус. Draft PR открывается рано и становится общей coordination surface для людей и агентов.
+
+Каждый серьёзный PR должен отвечать: что изменилось математически; frozen ли statement; какие evidence изменились; какие reviews стали stale; что доказано/опровергнуто; что искалось в литературе; какие checks необходимо повторить.
+
+\subsection{Коммиты}
+
+Предпочтительны маленькие аудируемые commits:
+
+\begin{lstlisting}
+H-0042: register scaling rigidity candidate
+H-0042: freeze theorem statement
+H-0042: prove compactness bridge lemma
+H-0042: add counterexample search results
+H-0042: record nearest prior-art candidates
+H-0042: reconstruct proof skeleton
+infra: reject invalid Lean references at candidate stage
+\end{lstlisting}
+
+Не смешивайте изменение CI/CD и headline mathematical proof в одном commit без необходимости.
+
+\section{Statement freeze и управление изменениями}
+
+Перед freeze три Lean reference fields должны быть различены:
+
+\begin{lstlisting}[style=yaml]
+statement:
+  lean_file: MathCI/Scaling.lean
+  lean_module: MathCI.Scaling
+  lean_declaration: MathCI.scaling_rigidity
+\end{lstlisting}
+
+\texttt{lean\_file} --- путь файловой системы; \texttt{lean\_module} --- импортируемый Lean module; \texttt{lean\_declaration} --- fully-qualified theorem/definition.
+
+\begin{lstlisting}
+researchctl validate
+researchctl freeze H-0042
+researchctl semantic-diff H-0042
+\end{lstlisting}
+
+После freeze proof refactoring разрешён при неизменном statement. Любое semantic изменение требует явного Statement Change Request: вернуть объект в \status{SPEC\_DRAFT}, объяснить причину, заморозить новую версию и повторить downstream reviews.
+
+\begin{dangerbox}
+Запрещено менять assumption, domain, binder, conclusion или definition только для того, чтобы агент смог завершить proof, а затем выдавать это за proof исходной гипотезы.
+\end{dangerbox}
+
+\section{Формализация, trusted base и зависимости}
+
+Во время Lean-разработки запускайте:
+
+\begin{lstlisting}
+lake build
+researchctl validate
+researchctl semantic-diff H-0042 --fail-on-change
+\end{lstlisting}
+
+Перед \status{FORMALIZED}:
+
+\begin{lstlisting}
+researchctl audit H-0042
+researchctl axioms-all
+researchctl deps-exact H-0042
+researchctl review-surface H-0042
+\end{lstlisting}
+
+\subsection{Placeholder proofs}
+
+Lean может принять \texttt{sorry} с warning. Math CI/CD обязан трактовать \texttt{sorry}/\texttt{admit} как hard failure. Успешный \cmd{lake build} сам по себе не означает complete proof.
+
+\subsection{Axiom policy}
+
+Trusted base задаётся allowlist policy. Project-specific axiom является научным предположением и должен быть явно обоснован. Нельзя добавлять axiom в allowlist только для того, чтобы CI стал зелёным.
+
+Fresh transitive traversal используется как основной gate; \texttt{\#print axioms} сохраняется как диагностическое сравнение.
+
+\subsection{Exact dependency graph и review surface}
+
+Exact graph строится из elaborated Lean environment. Он помогает найти project lemmas, на которых концентрируется человеческий review. Граф не заменяет математическое понимание и не является оценкой научной важности.
+
+\section{Semantic review}
+
+После готовности evidence:
+
+\begin{lstlisting}
+researchctl fingerprint H-0042
+researchctl review-init H-0042
+\end{lstlisting}
+
+Semantic reviewer обязан проверить definitions, assumptions, quantifiers/domains/boundaries, conclusion, vacuous/degenerate cases и отсутствие скрытого усиления спецификации. Review связан с frozen statement hash; изменение statement делает его stale/invalid.
+
+\begin{checklistbox}
+Перед \status{SEMANTIC\_REVIEWED}: definitions соответствуют intended objects; assumptions явно перечислены; conclusion совпадает с human claim; degenerate cases рассмотрены; theorem не стал тривиальным из-за encoding; reviewer не является LLM-подписью.
+\end{checklistbox}
+
+\section{Понимание proof и реконструкция}
+
+\texttt{proofs/H-0042.md} является рабочей human-readable реконструкцией, а не line-by-line переводом Lean. Она должна содержать conventional statement, 2--10 ключевых lemmas/transitions, границу routine library machinery и project-specific reasoning, использование assumptions и потенциальные circularity/trivialization points.
+
+\begin{lstlisting}
+researchctl deps-exact H-0042
+researchctl provenance-init H-0042
+researchctl review-surface H-0042
+\end{lstlisting}
+
+Proof review привязывается к formalization fingerprint. Изменение proof source, proof reconstruction или relevant environment делает старый review stale.
+
+\section{Assumption ablation и falsification}
+
+\begin{lstlisting}
+researchctl ablate H-0042
+\end{lstlisting}
+
+Для каждого содержательного assumption попытайтесь удалить/ослабить его, построить counterexample без него или указать точный proof step, где он необходим. Нельзя называть assumption необходимым только потому, что текущий proof его использует.
+
+Adversarial review должен проверять empty domains, zero/one limits, symmetry-degenerate и boundary cases, equivalent reparameterizations, tautological definitions и stronger known results.
+
+\section{Литературный обзор и provenance}
+
+\begin{principle}
+Цель literature review --- не подтвердить novelty, а активно попытаться её опровергнуть.
+\end{principle}
+
+\subsection{Обязательные семейства поиска}
+
+Ищите exact terminology; стандартные термины вместо project names; equivalent formulations; stronger results; weaker/general/special cases; characteristic proof ingredients; необычную последовательность reductions (proof fingerprint); источники major imported/library lemmas.
+
+Для каждого запроса фиксируйте дату, database/index/source, воспроизводимый query, candidate results и классификацию каждого серьёзного кандидата как equivalent/stronger/weaker/orthogonal/unresolved. Для сильных кандидатов делайте backward и forward citation chasing, когда применимо.
+
+\subsection{Provenance categories}
+
+\status{PROJECT\_NEW}, \status{PROJECT\_PRIOR}, \status{MATHLIB}, \status{EXTERNAL\_PUBLISHED}, \status{STANDARD\_FACT}, \status{UNKNOWN}. \status{UNKNOWN} допустим во время исследования, но не должен незаметно пережить сильный novelty claim.
+
+Agents могут сообщать: ``matching result не найден в перечисленных источниках''. Они не должны превращать это в ``theorem new''. При найденном эквивалентном prior result используйте \status{KNOWN\_RESULT}.
+
+\section{Freshness reviews и fingerprints}
+
+\begin{lstlisting}
+researchctl report H-0042
+researchctl fingerprint H-0042
+\end{lstlisting}
+
+Report должен различать \texttt{PASS / VALID}, \texttt{PASS / STALE}, \texttt{MISSING}, \texttt{INCONCLUSIVE}. \texttt{STALE} означает, что approval относился к старой версии evidence.
+
+\begin{dangerbox}
+Никогда не ``освежайте'' \texttt{\detokenize{*_sha256_reviewed}} механически. Правильное действие при STALE --- повторно проверить изменившийся материал и только затем записать новый review hash.
+\end{dangerbox}
+
+Fingerprint domains должны различать statement, formalization, literature/provenance, environment и complete evidence. Это позволяет повторять только затронутые проверки, не стирая независимые approvals без причины.
+
+\section{Independent reproduction}
+
+Reproducer предпочтительно работает в чистом clone и без generator chat history:
+
+\begin{lstlisting}
+git clone <repo> clean-reproduction
+cd clean-reproduction
+git checkout <commit>
+python -m pip install -e '.[dev]'
+lake build
+researchctl validate
+researchctl axioms-all
+researchctl deps-exact H-0042
+researchctl env-lock
+researchctl audit H-0042
+\end{lstlisting}
+
+Фиксируются exact commit, environment и способность восстановить human proof без скрытого контекста генератора.
+
+\section{CI: обязательные проверки и их смысл}
+
+\begin{longtable}{@{}p{.22\textwidth}p{.70\textwidth}@{}}
+\toprule
+\textbf{Check} & \textbf{Что он означает} \\
+\midrule
+\endhead
+\texttt{protocol-gate} & Metadata, valid Lean references, statement freeze, status requirements, freshness требуемых reviews, placeholders, provenance и final policy. \\
+\texttt{unit-tests} & Тестирует реализацию \texttt{researchctl}. Не тестирует вашу математику напрямую. \\
+\texttt{acceptance-suite} & Запускает sabotage regressions: baseline, \texttt{sorry}, invalid Lean references, statement drift, stale proof review и другие control failures. \\
+\texttt{agent-protocol} & Проверяет полноту canonical prompt files, вычисляет общий/role SHA-256 и публикует manifest как CI artifact. \\
+\texttt{workflow-audit} & Проверяет опасные GitHub Actions patterns. Privileged execution untrusted PR code с secrets является ошибкой. \\
+\texttt{lean-build} & Показывает, что Lean принимает код с зарегистрированным toolchain. Не доказывает novelty/meaning. \\
+\texttt{axiom-audit} & Делает transitive trusted-base traversal и применяет project axiom allowlist. \\
+\texttt{exact-dependencies} & Строит elaborated dependency evidence и environment artifacts. \\
+\bottomrule
+\end{longtable}
+
+PR mergeable только когда required machine checks зелёные \textbf{и} требуемые human reviews удовлетворены.
+
+\subsection{Локальный pre-push gate}
+
+\begin{lstlisting}
+pytest -q
+researchctl acceptance
+researchctl agent-manifest
+researchctl validate
+researchctl workflow-audit
+lake build
+researchctl axioms-all
+researchctl deps-exact-all
+\end{lstlisting}
+
+Для изменённого H-ID:
+
+\begin{lstlisting}
+researchctl semantic-diff H-0042
+researchctl fingerprint H-0042
+researchctl report H-0042
+researchctl audit H-0042
+\end{lstlisting}
+
+\section{CD: scientific delivery и immutable release}
+
+В обычном software CI/CD delivery означает deploy. Здесь delivery означает выпуск неизменяемого, воспроизводимого research artifact.
+
+Перед release:
+
+\begin{lstlisting}
+researchctl validate
+researchctl audit H-0042
+researchctl fingerprint H-0042
+researchctl packet H-0042
+\end{lstlisting}
+
+Verification packet должен содержать hypothesis card, Lean source, statement snapshot, proof reconstruction, literature/provenance evidence, reviews, dependency reports, environment lock, canonical agent prompt files, agent protocol manifest, provenance записей конкретных agent runs и SHA-256 manifest.
+
+Research-release workflow запускается только для \status{VERIFIED\_RESULT} и должен быть защищён GitHub Environment с human approval. Рекомендуемый immutable tag:
+
+\begin{lstlisting}
+result/H-0042/<statement-hash-prefix>
+\end{lstlisting}
+
+Опубликованный tag не переписывается. Материальное изменение evidence создаёт новый release с явным описанием связи со старым.
+
+\section{Merge policy для разных научных исходов}
+
+\textbf{Successful theorem:} merge на соответствующей стадии, без прыжка сразу в \status{VERIFIED\_RESULT}.\\
+\textbf{Refuted hypothesis:} merge воспроизводимого counterexample/refutation и статус \status{REFUTED}.\\
+\textbf{Known result:} merge provenance/literature finding и статус \status{KNOWN\_RESULT}.\\
+\textbf{Specification bug:} сохранить факт ошибочного encoding и поставить \status{SPECIFICATION\_BUG}; не переписывать историю.\\
+\textbf{Blocked/inconclusive:} документировать причину и условие разблокировки.
+
+\section{Правила работы агентов}
+
+Перед proof-agent передавайте H-ID, frozen statement или явный \status{SPEC\_DRAFT}, список definitions которые можно/нельзя менять, axiom policy, имеющийся provenance/literature evidence и прямой запрет silent assumption strengthening.
+
+Требуйте от proof-agent output в порядке: (1) interpretation exact statement; (2) proof architecture; (3) новые lemmas; (4) Lean implementation; (5) dependency/provenance notes; (6) явный запрос на specification change, если proof требует изменения постановки.
+
+Literature-agent обязан давать reproducible queries и candidate prior art, а не бинарный novelty verdict. Skeptic-agent получает задачу искать counterexamples, удалять assumptions, проверять degenerate cases и искать stronger known results.
+
+\begin{dangerbox}
+Агенту запрещено: менять frozen statement без SCR; самостоятельно ставить \status{VERIFIED\_RESULT}; подписывать human reviews; придумывать citations/search logs; скрывать неудачу proof через усиление assumptions; трактовать green CI как научное одобрение.
+\end{dangerbox}
+
+\subsection{Каноническая структура prompt'ов и разделение ролей}
+
+Нормативные prompt'ы агентов хранятся не в одном общем документе, а в каталоге \texttt{agents/}. Это часть воспроизводимой исследовательской среды.
+
+\begin{lstlisting}
+agents/
+  common/
+    SYSTEM.md
+    OUTPUT_CONTRACT.md
+  formalizer/
+    SYSTEM.md
+    TASK.md
+    OUTPUT_SCHEMA.yaml
+  skeptic/
+  semantic-reviewer/
+  proof-reviewer/
+  literature-reviewer/
+  provenance-auditor/
+  reproducer/
+  red-team/
+  merge-gate/
+\end{lstlisting}
+
+Каждая роль получает общий system contract, свой role-specific system prompt, task template и machine-readable output schema. Один универсальный агент не должен одновременно генерировать гипотезу, доказывать её, проверять семантику, подтверждать novelty и одобрять merge: разделение ролей является частью защиты от self-review.
+
+\begin{tabularx}{\textwidth}{@{}p{.27\textwidth}Y@{}}
+\toprule
+Роль & Основная обязанность \\
+\midrule
+\texttt{formalizer} & Формализовать ровно frozen statement; при необходимости semantic change остановиться и запросить SCR. \\
+\texttt{skeptic} & Пытаться опровергнуть claim, находить boundary cases, лишние assumptions и trivialization. \\
+\texttt{semantic-reviewer} & Сопоставить Lean definitions/statement с intended mathematics. \\
+\texttt{proof-reviewer} & Восстановить человеческое доказательство и минимальный review surface. \\
+\texttt{literature-reviewer} & Фальсифицировать novelty через воспроизводимый prior-art search. \\
+\texttt{provenance-auditor} & Классифицировать происхождение содержательных зависимостей. \\
+\texttt{reproducer} & Независимо воспроизвести build/evidence из чистой среды. \\
+\texttt{red-team} & Автоматизированно искать блокирующие риски; не имеет права выдавать научное одобрение. \\
+\texttt{merge-gate} & Проверить только repository evidence и policy gates перед merge. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Хеширование prompt-протокола и provenance запуска}
+
+Перед серьёзной AI-assisted работой создайте cryptographic manifest:
+
+\begin{lstlisting}
+researchctl agent-manifest
+\end{lstlisting}
+
+Команда вычисляет общий \texttt{agent\_protocol\_sha256} и отдельный hash каждой роли. Этот hash входит в research fingerprint и verification packet. Изменение канонического prompt'а поэтому является наблюдаемым изменением исследовательской среды.
+
+Для подготовки prompt'а конкретной роли:
+
+\begin{lstlisting}
+researchctl agent-prompt skeptic H-0042
+researchctl agent-prompt formalizer H-0042
+\end{lstlisting}
+
+Для фиксации реального AI-запуска:
+
+\begin{lstlisting}
+researchctl agent-run-init formalizer H-0042 \
+  --model gpt-5.6-sol
+\end{lstlisting}
+
+Создаваемая запись обязана содержать H-ID, роль, модель, commit, frozen statement hash, общий protocol hash и role prompt hash. После завершения запуска человек или automation заполняет реальные input/output artifacts и outcome. Нельзя переписывать hash в старой записи для ``освежения'' evidence; при изменении prompt'а или statement создаётся новый run record.
+
+\begin{warningbox}
+\texttt{docs/PROMPTS.md} является только кратким индексом. При любом расхождении нормативными для агентов считаются файлы в \texttt{agents/}. Human sign-off при этом по-прежнему не может быть заменён agent output schema.
+\end{warningbox}
+
+\section{Incident response и sabotage testing}
+
+Control system считается проверенным не одним зелёным build, а способностью правильно падать при атаке. После изменения infrastructure запускайте \cmd{researchctl acceptance} и полный matrix из \texttt{docs/FIRST\_RUN.md}.
+
+Минимальные sabotage scenarios:
+
+\begin{tabularx}{\textwidth}{@{}p{.36\textwidth}Y@{}}
+\toprule
+Саботаж & Ожидаемое поведение \\
+\midrule
+Добавить \texttt{sorry} & Lean может build'иться, но protocol gate обязан FAIL. \\
+Изменить frozen binder/assumption & semantic diff показывает drift; validate FAIL. \\
+Добавить custom axiom & fresh axiom audit находит её; policy FAIL без explicit allow. \\
+Скрыть axiom через bridge lemma & transitive traversal всё равно находит axiom. \\
+Изменить только proof & statement остаётся VALID; proof/reproduction reviews становятся STALE. \\
+Сломать lean\_file/module/declaration & validate выдаёт controlled INVALID\_LEAN\_REFERENCE, без traceback. \\
+Попытаться release до VERIFIED\_RESULT & CD workflow отказывает. \\
+\bottomrule
+\end{tabularx}
+
+\section{Definition of Done для publishable result}
+
+\begin{checklistbox}
+\begin{itemize}
+\item exact mathematical claim frozen;
+\item no placeholder proofs;
+\item clean Lean build;
+\item trusted-base/axiom audit passes;
+\item semantic review valid;
+\item human proof reconstruction complete;
+\item proof review valid;
+\item key dependency provenance classified;
+\item meaningful assumptions challenged/ablated where appropriate;
+\item literature search reproducibly logged;
+\item novelty review valid and claim language calibrated;
+\item independent reproduction valid;
+\item exact dependency report current;
+\item environment lock current;
+\item final review valid;
+\item required distinct human signers recorded;
+\item verification packet generated;
+\item immutable release created from reviewed commit.
+\end{itemize}
+\end{checklistbox}
+
+Это и есть intended meaning \status{VERIFIED\_RESULT}.
+
+\appendix
+\section{Краткая последовательность для новой гипотезы}
+
+\begin{enumerate}
+\item \cmd{researchctl new H-XXXX "..."}; создать Issue и Draft PR.
+\item Заполнить intended statement, scope, definitions, assumptions и initial prior art.
+\item На \status{SPEC\_DRAFT} провести semantic/falsification work.
+\item \cmd{researchctl validate}; \cmd{researchctl freeze H-XXXX}; проверить \cmd{semantic-diff}.
+\item Разрабатывать proof, не меняя frozen statement скрытно.
+\item Пройти build, placeholder, axiom и exact dependency checks.
+\item Выполнить semantic review.
+\item Восстановить proof человеком и выполнить proof review.
+\item Выполнить ablation/adversarial tests.
+\item Выполнить literature/provenance review с reproducible search log.
+\item Независимо воспроизвести на clean checkout.
+\item Проверить freshness всех reviews и final claim language.
+\item Создать verification packet и immutable research release.
+\end{enumerate}
+
+\section{Карта файлов}
+
+\begin{tabularx}{\textwidth}{@{}p{.38\textwidth}Y@{}}
+\toprule
+Путь & Назначение \\
+\midrule
+\texttt{hypotheses/H-XXXX.yaml} & machine-readable scientific state \\
+\texttt{MathCI/*.lean} & formal source \\
+\texttt{proofs/H-XXXX.md} & рабочая human proof reconstruction \\
+\texttt{lit/H-XXXX.md} & reproducible literature search log \\
+\texttt{provenance/H-XXXX.yaml} & dependency provenance registry \\
+\texttt{reviews/H-XXXX/*.yaml} & hash-bound review records \\
+\texttt{reports/statements/} & frozen statement snapshots \\
+\texttt{reports/dependencies/} & source/exact dependency evidence \\
+\texttt{reports/fingerprints/} & domain/evidence fingerprints \\
+\texttt{research-policy.yaml} & policy-as-code \\
+\texttt{docs/HUMAN\_MANUAL.tex} & canonical human SOP \\
+\texttt{AGENTS.md} & concise machine/agent contract \\
+\texttt{agents/} & canonical versioned prompts and output schemas for AI roles \\
+\texttt{agent-runs/H-XXXX/} & provenance records of concrete AI-assisted runs \\
+\texttt{reports/agents/manifest.json} & cryptographic manifest of the agent protocol \\
+\bottomrule
+\end{tabularx}
+
+\section{Команды ежедневного контроля}
+
+\begin{lstlisting}
+# Repository baseline
+pytest -q
+researchctl acceptance
+researchctl agent-manifest
+researchctl validate
+researchctl workflow-audit
+lake build
+researchctl axioms-all
+researchctl deps-exact-all
+
+# One hypothesis
+researchctl semantic-diff H-0042
+researchctl fingerprint H-0042
+researchctl report H-0042
+researchctl audit H-0042
+
+# Evidence lifecycle
+researchctl provenance-init H-0042
+researchctl ablate H-0042
+researchctl review-init H-0042
+researchctl packet H-0042
+\end{lstlisting}
+
+\vfill
+\begin{center}
+\small\textcolor{gray}{Этот документ задаёт human operating procedure. При расхождении краткого Markdown summary и данного TeX manual приоритет имеет TeX manual, если policy-as-code/CI не устанавливают более строгого требования.}
+\end{center}
+\end{document}

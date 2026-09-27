@@ -1,0 +1,11 @@
+type: object
+required: [hypothesis_id, role, outcome, attacks, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: skeptic}
+  outcome: {enum: [COUNTEREXAMPLE_FOUND, NO_COUNTEREXAMPLE_FOUND, BLOCKED]}
+  attacks: {type: array}
+  counterexamples: {type: array}
+  removable_assumptions: {type: array}
+  trivialization_risks: {type: array}
+  unresolved_risks: {type: array}

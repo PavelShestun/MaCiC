@@ -1,0 +1,13 @@
+type: object
+required: [hypothesis_id, role, decision, clean_checkout, lean_build, statement_hash_matches, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: reproducer}
+  decision: {enum: [PASS, FAIL, INCONCLUSIVE]}
+  clean_checkout: {type: boolean}
+  lean_build: {type: boolean}
+  statement_hash_matches: {type: boolean}
+  axiom_audit_matches: {type: boolean}
+  dependency_report_generated: {type: boolean}
+  steps: {type: array}
+  unresolved_risks: {type: array}

@@ -1,0 +1,25 @@
+name: verification-packet
+on:
+  workflow_dispatch:
+    inputs:
+      hypothesis:
+        description: 'Hypothesis ID, e.g. H-0042'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  packet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - run: researchctl validate
+      - run: researchctl packet "${{ inputs.hypothesis }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.hypothesis }}-verification-packet
+          path: reports/packets/${{ inputs.hypothesis }}-verification-packet.zip
+          if-no-files-found: error

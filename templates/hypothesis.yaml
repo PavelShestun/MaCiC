@@ -1,0 +1,32 @@
+id: H-XXXX
+title: ""
+status: CANDIDATE
+created: YYYY-MM-DD
+owners:
+  research: ""
+  formalization: ""
+statement:
+  informal: ""
+  lean_declaration: ""
+  lean_file: ""
+  frozen_sha256: ""
+  freeze_commit: ""
+assumptions: []
+definitions: []
+claims_of_novelty:
+  status: UNKNOWN
+  scope: ""
+evidence:
+  formal_build: false
+  no_placeholder_proofs: false
+  semantic_review: false
+  proof_reconstruction: false
+  adversarial_review: false
+  literature_review: false
+  independent_reproduction: false
+human_signoff:
+  specification: ""
+  mathematics: ""
+  formalization: ""
+  novelty: ""
+notes: ""

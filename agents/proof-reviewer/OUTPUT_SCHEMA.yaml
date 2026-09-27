@@ -1,0 +1,12 @@
+type: object
+required: [hypothesis_id, role, decision, key_transitions, circularity_checked, hidden_trivialization_checked, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: proof-reviewer}
+  decision: {enum: [PASS, FAIL, INCONCLUSIVE]}
+  human_proof_sketch: {type: string}
+  key_transitions: {type: array}
+  circularity_checked: {type: boolean}
+  hidden_trivialization_checked: {type: boolean}
+  review_surface: {type: array}
+  unresolved_risks: {type: array}

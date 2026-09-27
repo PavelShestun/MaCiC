@@ -1,0 +1,12 @@
+type: object
+required: [hypothesis_id, role, assessment, searches, closest_results, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: literature-reviewer}
+  assessment: {enum: [UNRESOLVED, LIKELY_KNOWN, NO_EQUIVALENT_FOUND]}
+  searches: {type: array}
+  closest_results: {type: array}
+  backward_citation_chase: {type: boolean}
+  forward_citation_chase: {type: boolean}
+  proof_fingerprint_search: {type: boolean}
+  unresolved_risks: {type: array}

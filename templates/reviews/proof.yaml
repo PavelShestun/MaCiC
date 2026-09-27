@@ -1,0 +1,12 @@
+reviewer: ""
+github_login: ""
+date: ""
+decision: inconclusive
+statement_hash_reviewed: ""
+formalization_sha256_reviewed: ""
+summary: ""
+human_sketch_complete: false
+key_transitions_understood: false
+no_circularity_found: false
+no_hidden_trivialization_found: false
+review_surface_checked: false

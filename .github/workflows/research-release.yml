@@ -1,0 +1,81 @@
+name: research-release
+on:
+  workflow_dispatch:
+    inputs:
+      hypothesis:
+        description: 'Verified hypothesis ID, e.g. H-0042'
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  release:
+    name: research-release
+    environment: research-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Validate research governance
+        run: researchctl validate
+      - name: Require VERIFIED_RESULT
+        env:
+          HYPOTHESIS: ${{ inputs.hypothesis }}
+        run: |
+          python - <<'PY'
+          import os, yaml, pathlib
+          h=os.environ['HYPOTHESIS']
+          p=pathlib.Path('hypotheses')/f'{h}.yaml'
+          d=yaml.safe_load(p.read_text())
+          if d.get('status') != 'VERIFIED_RESULT':
+              raise SystemExit(f'{h} is {d.get("status")}, not VERIFIED_RESULT')
+          print(d['statement']['frozen_sha256'])
+          PY
+      - name: Clean Lean build
+        run: lake --no-ansi build
+      - name: Axiom audit
+        run: researchctl axioms-all
+      - name: Re-extract exact dependency graph
+        run: researchctl deps-exact "${{ inputs.hypothesis }}"
+      - name: Require committed exact dependency evidence to be current
+        run: |
+          git diff --exit-code -- "reports/dependencies/${{ inputs.hypothesis }}.exact.json" "reports/dependencies/${{ inputs.hypothesis }}.exact.dot" || {
+            echo 'Exact dependency evidence changed. Commit the regenerated evidence and re-review before releasing.' >&2
+            exit 1
+          }
+      - name: Verify environment lock is current
+        run: researchctl validate
+      - name: Build review surface and fingerprint
+        run: |
+          researchctl review-surface "${{ inputs.hypothesis }}"
+          researchctl fingerprint "${{ inputs.hypothesis }}"
+      - name: Build verification packet
+        run: researchctl packet "${{ inputs.hypothesis }}"
+      - name: Create versioned research release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HYPOTHESIS: ${{ inputs.hypothesis }}
+        run: |
+          hash="$(python - <<'PY'
+          import os,yaml,pathlib
+          h=os.environ['HYPOTHESIS']; d=yaml.safe_load((pathlib.Path('hypotheses')/f'{h}.yaml').read_text())
+          print(d['statement']['frozen_sha256'][:12])
+          PY
+          )"
+          tag="result/${HYPOTHESIS}/${hash}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to overwrite a research release." >&2
+            exit 1
+          fi
+          gh release create "$tag" \
+            "reports/packets/${HYPOTHESIS}-verification-packet.zip" \
+            --target "${GITHUB_SHA}" \
+            --title "${HYPOTHESIS} verified result ${hash}" \
+            --notes "Versioned mathematical research object ${HYPOTHESIS}. Frozen statement SHA-256 begins ${hash}. Verification evidence and file hashes are in the attached packet."

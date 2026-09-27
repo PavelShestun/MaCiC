@@ -1,0 +1,33 @@
+name: New mathematical hypothesis
+about: Register a candidate claim before proof search
+labels: ["research:hypothesis", "status:candidate"]
+body:
+  - type: markdown
+    attributes:
+      value: "Register the claim before substantial proof search. Do not claim novelty here."
+  - type: input
+    id: title
+    attributes: {label: Short title, placeholder: "Scaling preserves ..."}
+    validations: {required: true}
+  - type: textarea
+    id: statement
+    attributes: {label: Informal statement, description: "Quantifiers, assumptions, conclusion. Avoid motivational prose."}
+    validations: {required: true}
+  - type: textarea
+    id: definitions
+    attributes: {label: Definitions and ambient setting}
+    validations: {required: true}
+  - type: textarea
+    id: falsification
+    attributes: {label: Immediate falsification attempts, description: "Boundary cases, counterexample families, assumption removal."}
+    validations: {required: true}
+  - type: textarea
+    id: known
+    attributes: {label: Closest known results, description: "Known papers/theorems or 'not searched yet'."}
+    validations: {required: true}
+  - type: dropdown
+    id: novelty
+    attributes:
+      label: Novelty claim at registration
+      options: ["UNKNOWN"]
+    validations: {required: true}

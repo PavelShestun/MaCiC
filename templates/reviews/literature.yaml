@@ -1,0 +1,15 @@
+reviewer: ""
+github_login: ""
+date: ""
+decision: inconclusive
+statement_hash_reviewed: ""
+literature_sha256_reviewed: ""
+search_completed_through: ""
+summary: ""
+query_families: []
+databases_or_indexes: []
+closest_results: []
+backward_citation_chase: false
+forward_citation_chase: false
+proof_fingerprint_search: false
+novelty_assessment: UNKNOWN

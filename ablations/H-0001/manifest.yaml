@@ -1,0 +1,12 @@
+hypothesis: H-0001
+statement_hash: 889f25df346a431fc4878903ee99e0a600c2fdc3a3cc1ede214f49e94a755083
+method: remove-one-binder candidate analysis
+assumptions:
+- id: A1
+  binder: n
+  type: Nat
+  kind: explicit
+  candidate_assumption: false
+  status: UNKNOWN
+  evidence: ''
+  notes: ''

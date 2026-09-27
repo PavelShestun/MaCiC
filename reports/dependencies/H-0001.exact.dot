@@ -1,0 +1,10 @@
+digraph proof {
+  rankdir=LR;
+  "Eq" [shape=ellipse, label="Eq\n[environment]"];
+  "Eq.refl" [shape=ellipse, label="Eq.refl\n[environment]"];
+  "MathCI.identity_example" [shape=box, label="MathCI.identity_example\n[project]"];
+  "Nat" [shape=ellipse, label="Nat\n[environment]"];
+  "MathCI.identity_example" -> "Eq";
+  "MathCI.identity_example" -> "Eq.refl";
+  "MathCI.identity_example" -> "Nat";
+}

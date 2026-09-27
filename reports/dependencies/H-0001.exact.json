@@ -1,0 +1,40 @@
+{
+  "hypothesis": "H-0001",
+  "root": "MathCI.identity_example",
+  "method": "lean-elaborated-constantinfo",
+  "scope": "Exact constants from elaborated ConstantInfo for every reachable project declaration; non-project environment constants are leaves.",
+  "statement_hash": "889f25df346a431fc4878903ee99e0a600c2fdc3a3cc1ede214f49e94a755083",
+  "lean_module": "MathCI.Example",
+  "indexed_project_declarations": 1,
+  "probed_visible_project_declarations": 1,
+  "nodes": {
+    "Eq": {
+      "kind": "environment"
+    },
+    "Eq.refl": {
+      "kind": "environment"
+    },
+    "MathCI.identity_example": {
+      "kind": "project",
+      "file": "MathCI/Example.lean",
+      "line": 4
+    },
+    "Nat": {
+      "kind": "environment"
+    }
+  },
+  "edges": [
+    {
+      "from": "MathCI.identity_example",
+      "to": "Eq"
+    },
+    {
+      "from": "MathCI.identity_example",
+      "to": "Eq.refl"
+    },
+    {
+      "from": "MathCI.identity_example",
+      "to": "Nat"
+    }
+  ]
+}

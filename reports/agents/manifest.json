@@ -1,0 +1,135 @@
+{
+  "protocol_version": "0.4.2",
+  "files": [
+    {
+      "path": "agents/common/OUTPUT_CONTRACT.md",
+      "sha256": "cdcc210c6322356fb3c5d64aa5f3901b8174f8d89995288a60d1cda2bca181da"
+    },
+    {
+      "path": "agents/common/SYSTEM.md",
+      "sha256": "c6663d7852dafd72a7be81666ac0ec3210c24d74aa801cf1545a1db4da0bb82f"
+    },
+    {
+      "path": "agents/formalizer/OUTPUT_SCHEMA.yaml",
+      "sha256": "11319a28da477b252f0f813557a82dce701ff1536218a6ace34b00c8dc09bc15"
+    },
+    {
+      "path": "agents/formalizer/SYSTEM.md",
+      "sha256": "af5f6d16e94ef46e30c0a33c617af3884dc5e355ca1ee66873ce1e896652ec69"
+    },
+    {
+      "path": "agents/formalizer/TASK.md",
+      "sha256": "abfbf05cde376e33d531dee45df045e4301ed64ea2c09e608b3ee82ba5085845"
+    },
+    {
+      "path": "agents/literature-reviewer/OUTPUT_SCHEMA.yaml",
+      "sha256": "513bfe99741082fec5c0ef12e59b2516a1a2af9c4d3cb84793ca7550a390f00f"
+    },
+    {
+      "path": "agents/literature-reviewer/SYSTEM.md",
+      "sha256": "6aa5cd48d78201495c6d7eab998c8955dba7f13b3ff7cab6124d0f4fedf5227d"
+    },
+    {
+      "path": "agents/literature-reviewer/TASK.md",
+      "sha256": "f9c3713046f9f7606c9e506593945590847f3b2b1e034d08fa715d5a6c9c66d1"
+    },
+    {
+      "path": "agents/merge-gate/OUTPUT_SCHEMA.yaml",
+      "sha256": "9a6f15b05fb19cf35a3eba1facd43b51bde14abb444cd01a8c867583968cf93f"
+    },
+    {
+      "path": "agents/merge-gate/SYSTEM.md",
+      "sha256": "b873fe3a4a6e6a286f805b6bf5cdc58d87662fe87e4a09d2ba6f192eb6b82738"
+    },
+    {
+      "path": "agents/merge-gate/TASK.md",
+      "sha256": "84c4cd6f69d50599198ce6edea3f8c5698d92dc3b28590347be81ecb7c64d3d4"
+    },
+    {
+      "path": "agents/proof-reviewer/OUTPUT_SCHEMA.yaml",
+      "sha256": "751b2d48c070fa5215c8bd1f1e0de10b45a0fc62518267f351cf82eba2492c7e"
+    },
+    {
+      "path": "agents/proof-reviewer/SYSTEM.md",
+      "sha256": "825bb467e9450c7f4234bd65f8b3f6c4fef2144ce275a19584ed0cb118b4935c"
+    },
+    {
+      "path": "agents/proof-reviewer/TASK.md",
+      "sha256": "55d1dd29526aa400ab95b6356f2d1df779fa2203a30f1b8f9626acfeba6e156f"
+    },
+    {
+      "path": "agents/provenance-auditor/OUTPUT_SCHEMA.yaml",
+      "sha256": "a19e33f36923c6b66f916bb4e27e4f4218d6e5de546dbbc6f736d237759568b7"
+    },
+    {
+      "path": "agents/provenance-auditor/SYSTEM.md",
+      "sha256": "51b8fb20d61b0a30b74d3c2d55372a75aaa34aef9c189e5faded2e3cd1374fc6"
+    },
+    {
+      "path": "agents/provenance-auditor/TASK.md",
+      "sha256": "4107979eeb5d6e435adbb79757e92e31a929f0ae1290f121a052e0daf01c8c4e"
+    },
+    {
+      "path": "agents/red-team/OUTPUT_SCHEMA.yaml",
+      "sha256": "ed11010dac08d33f79ce0212d447ceaf9f5ec96706437c9eee4e373f9bfd79e6"
+    },
+    {
+      "path": "agents/red-team/SYSTEM.md",
+      "sha256": "e80dd96c23c86dbf323a2ed708cfe32f2d0fa261a35573546505f14bfbe37eaf"
+    },
+    {
+      "path": "agents/red-team/TASK.md",
+      "sha256": "a5c94a38f9da19d5f031d6632a6c96d634d7a3b28db5f2be9d66c9cdd677ae9e"
+    },
+    {
+      "path": "agents/reproducer/OUTPUT_SCHEMA.yaml",
+      "sha256": "9fdf53dc6e8abcb01c651b5eec1d941e08d47daa521cfa160d4dc2d0290d5114"
+    },
+    {
+      "path": "agents/reproducer/SYSTEM.md",
+      "sha256": "22f2b1cec8a440ef6733f7e22caf8ebab542e48c1f26089f441b652c9d3ae470"
+    },
+    {
+      "path": "agents/reproducer/TASK.md",
+      "sha256": "99094c97e7f4ca96a091aee3e820f5c87af4551da0d8b6297cf03c38bcbcdf70"
+    },
+    {
+      "path": "agents/semantic-reviewer/OUTPUT_SCHEMA.yaml",
+      "sha256": "1063df11ca510cb3ad84e4bd5c9b5f2633efcdcbf32aa92c6925e1b23c132808"
+    },
+    {
+      "path": "agents/semantic-reviewer/SYSTEM.md",
+      "sha256": "78129931865ab1663a26b818f755b749d8c0ba57ec4b10b8660b5dc95e67e0d6"
+    },
+    {
+      "path": "agents/semantic-reviewer/TASK.md",
+      "sha256": "9f03c91c4825af8fee3244a1646821317de2ee57d8d3a813690b115fd361f8cd"
+    },
+    {
+      "path": "agents/skeptic/OUTPUT_SCHEMA.yaml",
+      "sha256": "0759a810420c83b491854ce078747a86aba764d93706fed33b9d2ec63e9161de"
+    },
+    {
+      "path": "agents/skeptic/SYSTEM.md",
+      "sha256": "9a9723eff022125f58e6452f8966bca6ccc8b271017a0ec8ec8220e8ff64640f"
+    },
+    {
+      "path": "agents/skeptic/TASK.md",
+      "sha256": "490d56777f46dcd8590067b18906f1f0248991b88937d635c4eedbeaa736222c"
+    }
+  ],
+  "role_hashes": {
+    "common": "c99d11121e5ee2305f46d05e4ead6fd420fd56c1e4a10a7fc380d2d885dc7ef1",
+    "formalizer": "69d271d1d9af9559cabddb5be0803ed0c64aecbe6ee98fd7e69782629dbbc77f",
+    "literature-reviewer": "c46be69dc7228c19008ea4c8a7a1273824770a8c6fd85a7633603f1b7d0f3682",
+    "merge-gate": "489fdf2aaf99d0376af5906c1a385189d7861a605c9ffadd67415c796ade9729",
+    "proof-reviewer": "0ba2231c7d429f987eb36d55d6ef6a89a4d1d0567ccd4babb23e868e8e5aa44c",
+    "provenance-auditor": "69b048608d17d5e6546b052c707b417e495448ac3f0d83812ec4d936b65bb331",
+    "red-team": "760439d928243760297002be5b9145cfef0f4d001c98c61878fb603007b0b282",
+    "reproducer": "391e2f20326d2e8fdb31caba2df910c9a850b32c40394cabdf939ca1ce7ca2e9",
+    "semantic-reviewer": "be8ec2d8ba698ceed58412a65dedf4fcc80aa85788d71b81f668dac0846cb255",
+    "skeptic": "0f8ea3b1d55410950678d04101d2d4db94760e3cd30504683d4c255a5a2969a9"
+  },
+  "agent_protocol_sha256": "66478c15e081dfc88b3d4158dc939dcff6e6651fa001ec4d5b857fabcf6704af",
+  "generated_utc": "2026-09-27T00:14:23.942015+00:00"
+}

@@ -1,0 +1,190 @@
+name: research-gates
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-gate:
+    name: protocol-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Validate repository invariants
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1 || true
+            researchctl validate --base "origin/${{ github.base_ref }}"
+          else
+            researchctl validate
+          fi
+
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e '.[dev]'
+      - run: pytest -q
+
+  acceptance-suite:
+    name: acceptance-suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e '.[dev]'
+      - name: Run built-in sabotage regression suite
+        run: researchctl acceptance
+
+  agent-protocol:
+    name: agent-protocol
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Validate and hash canonical agent prompts
+        run: researchctl agent-manifest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-protocol-manifest
+          path: reports/agents/manifest.json
+
+  workflow-audit:
+    name: workflow-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - run: researchctl workflow-audit
+
+  lean-build:
+    name: lean-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect Lean project
+        id: lean
+        run: |
+          if [ -f lakefile.toml ] || [ -f lakefile.lean ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install elan
+        if: steps.lean.outputs.present == 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache Lake
+        if: steps.lean.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake/packages
+            .lake/build
+          key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+      - name: Build Lean project
+        if: steps.lean.outputs.present == 'true'
+        run: lake --no-ansi build
+      - name: No Lean project
+        if: steps.lean.outputs.present != 'true'
+        run: echo "No lakefile found; Lean build is not applicable."
+
+  axiom-audit:
+    name: axiom-audit
+    needs: lean-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Detect Lean project
+        id: lean
+        run: |
+          if [ -f lakefile.toml ] || [ -f lakefile.lean ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install elan
+        if: steps.lean.outputs.present == 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Audit theorem axioms
+        if: steps.lean.outputs.present == 'true'
+        run: researchctl axioms-all
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.lean.outputs.present == 'true'
+        with:
+          name: axiom-audit
+          path: reports/axioms
+          if-no-files-found: warn
+
+  exact-dependencies:
+    name: exact-dependencies
+    needs: lean-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Cache Lake
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake/packages
+            .lake/build
+          key: ${{ runner.os }}-lean-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml', 'lakefile.lean') }}
+      - name: Extract elaborated dependency graphs
+        run: researchctl deps-exact-all
+      - name: Build environment lock for artifact
+        run: researchctl env-lock
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact-mathematics-analysis
+          path: |
+            reports/dependencies/*.exact.json
+            reports/dependencies/*.exact.dot
+            reports/review-surface/*.json
+            reports/environment/lock.json
+          if-no-files-found: warn
+
+  summary:
+    name: research-summary
+    if: always()
+    needs: [protocol-gate, unit-tests, acceptance-suite, agent-protocol, workflow-audit, lean-build, axiom-audit, exact-dependencies]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary
+        run: |
+          {
+            echo "## Mathematics CI/CD"
+            echo "| Gate | Result |"
+            echo "|---|---|"
+            echo "| Protocol | ${{ needs.protocol-gate.result }} |"
+            echo "| Tool tests | ${{ needs.unit-tests.result }} |"
+            echo "| Sabotage regression | ${{ needs.acceptance-suite.result }} |"
+            echo "| Agent protocol | ${{ needs.agent-protocol.result }} |"
+            echo "| Workflow security | ${{ needs.workflow-audit.result }} |"
+            echo "| Lean build | ${{ needs.lean-build.result }} |"
+            echo "| Axiom audit | ${{ needs.axiom-audit.result }} |"
+            echo "| Exact dependencies | ${{ needs.exact-dependencies.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

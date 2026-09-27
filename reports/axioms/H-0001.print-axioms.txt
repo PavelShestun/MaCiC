@@ -1,0 +1,2 @@
+'MathCI.identity_example' does not depend on any axioms
+MathCI.identity_example (n : Nat) : n = n

@@ -1,0 +1,6 @@
+name = "math-cicd-template"
+version = "0.1.0"
+defaultTargets = ["MathCI"]
+
+[[lean_lib]]
+name = "MathCI"

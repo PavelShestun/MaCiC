@@ -1,0 +1,37 @@
+# Math CI/CD policy. Tighten deliberately; changes to this file alter research governance.
+minimum_distinct_final_signers: 2
+require_reproducer_distinct_from_primary_author: true
+require_statement_hash_in_semantic_review: true
+require_statement_hash_in_reproduction_review: true
+require_statement_snapshot: true
+require_provenance_before_novelty: true
+require_ablation_before_novelty: false
+require_fresh_literature_review: true
+require_fresh_reproduction_review: true
+require_fresh_final_review: true
+require_citation_chasing_for_novelty: true
+require_github_login_on_reviews: false
+require_exact_dependencies_before_final: true
+require_environment_lock_before_final: true
+novelty_status_for_verified:
+  - SUPPORTED
+  - NOT_APPLICABLE
+redteam:
+  hard_gate: false
+  provider: openai
+  model_env: MATH_CICD_REDTEAM_MODEL
+  opt_in_label: math:redteam
+  max_targets: 10
+  max_bundle_bytes: 200000
+
+# High-assurance default: only Lean's ordinary classical logical axioms are allowed.
+# Add a project-specific axiom explicitly if the scientific model genuinely assumes it.
+axiom_policy:
+  mode: allowlist
+  allow:
+    - propext
+    - Classical.choice
+    - Quot.sound
+  deny:
+    - sorryAx
+  deny_substrings: []

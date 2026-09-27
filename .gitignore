@@ -1,0 +1,8 @@
+.lake/
+build/
+*.olean
+*.ilean
+__pycache__/
+*.pyc
+.DS_Store
+verification_packets/

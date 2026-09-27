@@ -1,0 +1,33 @@
+name: redteam-prepare
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'math:redteam') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Build adversarial review bundles
+        run: |
+          mkdir -p reports/redteam/bundle
+          count=0
+          for f in hypotheses/H-*.yaml; do
+            [ "$count" -lt 10 ] || { echo "Refusing more than 10 red-team targets"; exit 2; }
+            id="$(basename "$f" .yaml)"
+            researchctl redteam "$id"
+            count=$((count+1))
+          done
+          cp reports/redteam/*-prompt.md reports/redteam/bundle/ 2>/dev/null || true
+          echo '${{ github.event.pull_request.number }}' > reports/redteam/bundle/pr-number.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: redteam-input
+          path: reports/redteam/bundle
+          if-no-files-found: error

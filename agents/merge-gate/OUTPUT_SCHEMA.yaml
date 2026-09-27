@@ -1,0 +1,8 @@
+type: object
+required: [hypothesis_id, role, verdict, hard_blockers, advisory_concerns]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: merge-gate}
+  verdict: {enum: [BLOCK_MERGE, GATES_SATISFIED]}
+  hard_blockers: {type: array}
+  advisory_concerns: {type: array}

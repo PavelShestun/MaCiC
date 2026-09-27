@@ -1,0 +1,33 @@
+name: research-analysis
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -e .
+      - name: Generate dependency/provenance/ablation scaffolds
+        run: |
+          for f in hypotheses/H-*.yaml; do
+            id="$(basename "$f" .yaml)"
+            researchctl deps "$id" || true
+            if [ ! -f "provenance/$id.yaml" ]; then researchctl provenance-init "$id" || true; fi
+            if [ -f "reports/statements/$id.lean" ] && [ ! -f "ablations/$id/manifest.yaml" ]; then researchctl ablate "$id" || true; fi
+            researchctl semantic-diff "$id" > "reports/statements/$id.diff.json" || true
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mathematics-analysis
+          path: |
+            reports/dependencies
+            reports/statements/*.diff.json
+            provenance
+            ablations
+          if-no-files-found: warn

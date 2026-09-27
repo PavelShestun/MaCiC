@@ -1,0 +1,24 @@
+{
+  "hypothesis": "H-0001",
+  "graph_method": "lean-elaborated-constantinfo",
+  "root": "MathCI.identity_example",
+  "recommended_review_order": [
+    "MathCI.identity_example"
+  ],
+  "novel_project_surface": [
+    "MathCI.identity_example"
+  ],
+  "unresolved_project_provenance": [],
+  "metrics": [
+    {
+      "declaration": "MathCI.identity_example",
+      "provenance": "PROJECT_NEW",
+      "direct_dependencies": 3,
+      "project_descendants": 0,
+      "new_descendants": 0,
+      "incoming_project_edges": 0,
+      "priority_score": 100
+    }
+  ],
+  "note": "Priority is a triage heuristic, not a mathematical importance score or proof of novelty."
+}

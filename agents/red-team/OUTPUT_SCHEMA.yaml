@@ -1,0 +1,13 @@
+type: object
+required: [hypothesis_id, role, verdict, blocking_issues, unresolved_risks]
+properties:
+  hypothesis_id: {type: string}
+  role: {const: red-team}
+  verdict: {enum: [BLOCK, NEEDS_HUMAN_REVIEW, NO_AUTOMATIC_BLOCK]}
+  blocking_issues: {type: array}
+  specification_attacks: {type: array}
+  assumption_attacks: {type: array}
+  provenance_risks: {type: array}
+  novelty_risks: {type: array}
+  reproduction_requests: {type: array}
+  unresolved_risks: {type: array}

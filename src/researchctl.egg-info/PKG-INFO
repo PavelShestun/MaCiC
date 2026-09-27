@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: researchctl
+Version: 0.4.2
+Summary: CI/CD gates for formal mathematics research projects
+Requires-Python: >=3.10
+Requires-Dist: PyYAML<7,>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest<9,>=8; extra == "dev"

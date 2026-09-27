@@ -1,0 +1,5 @@
+digraph proof {
+  rankdir=LR;
+  "MathCI.identity_example" [shape=box, label="MathCI.identity_example\n[project]"];
+  "MathCI.identity_example" -> "MathCI.identity_example";
+}
